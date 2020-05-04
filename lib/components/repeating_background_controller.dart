@@ -11,6 +11,7 @@ class RepeatingBackgroundController {
   bool _isInitialized = false;
   bool _isImageLoaded = false;
 
+  String _imageName;
   Image _image;
   double _imageWidth;
   double _imageHeight;
@@ -25,24 +26,18 @@ class RepeatingBackgroundController {
       String imageName,
       double velocityInFractionRenderRectWidthPerSecond,
       Rect renderRectAsCanvasFraction) {
+    _imageName = imageName;
     _background = RepeatingBackground();
     _renderRectAsCanvasFraction = renderRectAsCanvasFraction;
     _velocityInFractionRenderRectWidthPerSecond =
         velocityInFractionRenderRectWidthPerSecond;
-
-    Flame.images.load(imageName).then((image) {
-      _imageWidth ??= image.width.toDouble();
-      _imageHeight ??= image.height.toDouble();
-      _calculateVelocityInImageWidthsPerSecond();
-      _image = image;
-      _isImageLoaded = true;
-    });
   }
 
   void _calculateVelocityInImageWidthsPerSecond() {
-    double imageWidthsPerRenderRect = (_renderRectAsCanvasFraction.width /
-            _renderRectAsCanvasFraction.height) /
+    double imageWidthsPerRenderRect = (_renderRectInScreenUnits.width /
+        _renderRectInScreenUnits.height) /
         (_imageWidth / _imageHeight);
+
     _velocityInImageWidthsPerSecond =
         _velocityInFractionRenderRectWidthPerSecond * imageWidthsPerRenderRect;
   }
@@ -71,6 +66,13 @@ class RepeatingBackgroundController {
 
   void initialize(Size size) {
     resizeScreen(size);
+    Flame.images.load(_imageName).then((image) {
+      _imageWidth ??= image.width.toDouble();
+      _imageHeight ??= image.height.toDouble();
+      _calculateVelocityInImageWidthsPerSecond();
+      _image = image;
+      _isImageLoaded = true;
+    });
     _isInitialized = true;
   }
 

@@ -28,7 +28,8 @@ class TargetController {
       double targetWidthAsScreenWidthFraction,
       double targetHeightAsScreenWidthFraction,
       double spawnMinHeightAsScreenHeightFraction,
-      double spawnMaxHeightAsScreenHeightFraction) {
+      double spawnMaxHeightAsScreenHeightFraction,
+      double spawnFrequencyHertz) {
     _targets = List<HorizontallyMovingSprite>();
     _velocityInScreenWidthsPerSecond = velocityInScreenWidthsPerSecond;
     _targetImageName = targetImageName;
@@ -39,6 +40,7 @@ class TargetController {
         spawnMinHeightAsScreenHeightFraction;
     _spawnMaxHeightAsScreenHeightFraction =
         spawnMaxHeightAsScreenHeightFraction;
+    _spawnFrequencyHertz = spawnFrequencyHertz;
   }
 
   // Removes targets with collision and returns collision count (i.e. points

@@ -1,5 +1,10 @@
+import 'dart:async';
+import 'dart:collection';
+import 'dart:math';
+
 import 'package:charts_flutter/flutter.dart' as charts;
 import 'package:flutter/material.dart';
+import 'package:gameplayground/models/mock_bluetooth_manager.dart';
 
 class InputTimeseriesPage extends StatefulWidget {
   final String title;
@@ -11,6 +16,28 @@ class InputTimeseriesPage extends StatefulWidget {
 }
 
 class _InputTimeseriesPageState extends State<InputTimeseriesPage> {
+  TimeseriesWindowForPlot _timeseriesWindow = TimeseriesWindowForPlot(100);
+  MockBluetoothManager _bluetoothManager =
+      MockBluetoothManager(1000, 20, 10, 5, 50);
+  StreamSubscription<EmgSample> _streamSubscription;
+
+  @override
+  void initState() {
+    super.initState();
+    _streamSubscription = _bluetoothManager.getRawDataStream().listen((data) {
+      setState(() {
+        _timeseriesWindow.addValue(data);
+      });
+    });
+  }
+
+  @override
+  void dispose() {
+    super.dispose();
+    _streamSubscription.cancel();
+    _bluetoothManager.closeStream();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -21,11 +48,24 @@ class _InputTimeseriesPageState extends State<InputTimeseriesPage> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
-            Text('Empty Page'),
             SizedBox(
                 height: 250,
                 width: 250,
-                child: charts.LineChart(_createFakeData())),
+                child: charts.LineChart(
+                  <charts.Series<EmgSample, int>>[
+                    charts.Series<EmgSample, int>(
+                        id: 'fake_data',
+                        colorFn: (_, __) =>
+                            charts.MaterialPalette.blue.shadeDefault,
+                        domainFn: (EmgSample pair, _) => pair.timestamp,
+                        measureFn: (EmgSample pair, _) => pair.value,
+                        data: _timeseriesWindow.dataToPlot)
+                  ],
+                  animate: false,
+                  domainAxis: charts.NumericAxisSpec(
+                      tickProviderSpec:
+                          charts.NumericEndPointsTickProviderSpec()),
+                )),
           ],
         ),
       ),
@@ -33,27 +73,37 @@ class _InputTimeseriesPageState extends State<InputTimeseriesPage> {
   }
 }
 
-List<charts.Series<OrderedPair, int>> _createFakeData() {
-  final data = [
-    new OrderedPair(0, 1),
-    new OrderedPair(1, 5),
-    new OrderedPair(2, 4),
-    new OrderedPair(3, 7)
-  ];
+class TimeseriesWindowForPlot {
+  final int _capacity;
+  ListQueue<EmgSample> _data;
 
-  return [
-    charts.Series<OrderedPair, int>(
-        id: 'fake_data',
-        colorFn: (_, __) => charts.MaterialPalette.blue.shadeDefault,
-        domainFn: (OrderedPair pair, _) => pair.xValue,
-        measureFn: (OrderedPair pair, _) => pair.yValue,
-        data: data)
-  ];
-}
+  UnmodifiableListView<EmgSample> get dataToPlot =>
+      UnmodifiableListView<EmgSample>(_data);
 
-class OrderedPair {
-  final int xValue;
-  final int yValue;
+  TimeseriesWindowForPlot(this._capacity) {
+    _data = ListQueue<EmgSample>();
+  }
 
-  OrderedPair(this.xValue, this.yValue);
+  void addValue(EmgSample value) {
+    _data.addLast(value);
+
+    if (_data.length > _capacity) {
+      _data.removeFirst();
+    }
+  }
+
+  int get domainMin {
+    if (_data.isEmpty) {
+      return 0;
+    }
+    charts.AutoDateTimeTickProviderSpec();
+    return _data.map((EmgSample pair) => pair.timestamp).reduce(min);
+  }
+
+  int get domainMax {
+    if (_data.isEmpty) {
+      return 0;
+    }
+    return _data.map((EmgSample pair) => pair.timestamp).reduce(max);
+  }
 }

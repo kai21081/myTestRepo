@@ -20,6 +20,9 @@ void main() async {
     'birds/bird_wing_up.png'
   ]);
 
+  Flame.audio.disableLog();
+  Flame.audio.loadAll(<String>['background_music.mp3']);
+
   SurfaceEmgGameDatabase database = SurfaceEmgGameDatabase();
   await database.initialize();
 

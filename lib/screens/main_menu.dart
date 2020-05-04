@@ -3,6 +3,7 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:gameplayground/flappy_game.dart';
 import 'package:gameplayground/models/session_data.dart';
+import 'package:gameplayground/screens/game_settings.dart';
 import 'package:gameplayground/screens/input_timeseries.dart';
 import 'package:provider/provider.dart';
 
@@ -76,6 +77,15 @@ class _MainMenuPageState extends State<MainMenuPage> {
                   Util().addGestureRecognizer(tapper);
                   return game.widget;
                 }));
+              },
+            ),
+            SizedBox(height: 20),
+            FloatingActionButton.extended(
+              label: Text('Game Settings'),
+              heroTag: 'game_settings',
+              onPressed: () {
+                Navigator.push(context,
+                    MaterialPageRoute(builder: (context) => GameSettingsPage()));
               },
             ),
             SizedBox(height: 20),

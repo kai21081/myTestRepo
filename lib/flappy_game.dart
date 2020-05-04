@@ -9,15 +9,21 @@ import 'package:gameplayground/components/bird_controller.dart';
 import 'package:gameplayground/components/column_obstacle_controller.dart';
 import 'package:gameplayground/components/repeating_background_controller.dart';
 import 'package:gameplayground/components/target_controller.dart';
-import 'package:gameplayground/models/Session.dart';
 import 'package:gameplayground/models/gameplay_data.dart';
 import 'package:gameplayground/models/session_data.dart';
 import 'package:gameplayground/screens/main_menu.dart';
 import 'package:provider/provider.dart';
 
+import 'models/game_settings.dart';
+
 class FlappyGame extends Game with HasWidgetsOverlay {
+  static const String _cherryImagePath = 'targets/cherry.png';
+  static const String _columnImagePath = 'obstacles/column.png';
+  static const String _skyImagePath = 'backgrounds/sky.png';
+  static const String _groundImagePath = 'backgrounds/ground.png';
+
   Size _screenSize;
-  double _tileSize;
+  GameSettings _gameSettings;
   TargetController _targetController;
   BirdController _birdController;
   ColumnObstacleController _columnObstacleController;
@@ -34,6 +40,7 @@ class FlappyGame extends Game with HasWidgetsOverlay {
   final String currentScoreOverlayName = 'current_score';
 
   FlappyGame(this._context) {
+    _gameSettings = GameSettings();
     _initialize();
   }
 
@@ -45,6 +52,20 @@ class FlappyGame extends Game with HasWidgetsOverlay {
     _isGameOver = false;
   }
 
+  void _callFunctionOnControllers(Function function) {
+    function(_skyBackgroundController);
+    function(_grassBackgroundController);
+    function(_birdController);
+
+    if (_gameSettings.includeCherries) {
+      function(_targetController);
+    }
+
+    if (_gameSettings.includeColumns) {
+      function(_columnObstacleController);
+    }
+  }
+
   @override
   void render(Canvas canvas) {
     Rect bgRect = Rect.fromLTWH(0, 0, _screenSize.width, _screenSize.height);
@@ -52,62 +73,45 @@ class FlappyGame extends Game with HasWidgetsOverlay {
     bgPaint.color = Color(0xff576574);
     canvas.drawRect(bgRect, bgPaint);
 
-    _skyBackgroundController.render(canvas);
-    _columnObstacleController.render(canvas);
-    _grassBackgroundController.render(canvas);
-    _targetController.render(canvas);
-    _birdController.render(canvas);
+    _callFunctionOnControllers((controller) => controller.render(canvas));
   }
 
   @override
   void resize(Size size) {
     _screenSize = size;
-    _tileSize = _screenSize.width / 9;
     super.resize(size);
 
-    _skyBackgroundController.resizeScreen(size);
-    _grassBackgroundController.resizeScreen(size);
-    _birdController.resizeScreen(size, _tileSize);
-    _columnObstacleController.resizeScreen(size);
-    _targetController.resizeScreen(size);
+    _callFunctionOnControllers((controller) => controller.resizeScreen(size));
   }
 
   @override
   void update(double time) {
     if (_isGameOver) {
+      Flame.bgm.stop();
       return;
     }
 
-    _skyBackgroundController.update(time);
-    _grassBackgroundController.update(time);
-    _birdController.update(time);
-    _columnObstacleController.update(time);
-    _targetController.update(time);
+    _callFunctionOnControllers((controller) => controller.update(time));
 
     if (_birdController.isBirdOnGround() ||
         _columnObstacleController
             .isCollidingWithObstacle(_birdController.getBirdPosition())) {
-      int gameEndMillisecondsSinceEpoch = DateTime
-          .now()
-          .millisecondsSinceEpoch;
+      int gameEndMillisecondsSinceEpoch = DateTime.now().millisecondsSinceEpoch;
 
       _birdController.killBird();
       _isGameOver = true;
       _highScore = max(_highScore, _currentScore);
       print(
-          Provider
-              .of<SessionDataModel>(_context, listen: false)
-              .currentUserId);
+          Provider.of<SessionDataModel>(_context, listen: false).currentUserId);
       _showGameOverMenu();
 
-      _addGameDataToDatabase(
-          _gameStartMillisecondsSinceEpoch, gameEndMillisecondsSinceEpoch,
-          _currentScore);
+      _addGameDataToDatabase(_gameStartMillisecondsSinceEpoch,
+          gameEndMillisecondsSinceEpoch, _currentScore);
     }
 
     int birdCollisionCount =
-    _targetController.removeTargetsWithCollisionAndCalculateCount(
-        _birdController.getBirdPosition());
+        _targetController.removeTargetsWithCollisionAndCalculateCount(
+            _birdController.getBirdPosition());
     _currentScore += birdCollisionCount;
     _updateScoreCounter();
   }
@@ -115,7 +119,7 @@ class FlappyGame extends Game with HasWidgetsOverlay {
   void _addGameDataToDatabase(int startTimestamp, int endTimestamp, int score) {
     // TODO: Actually store activation count, app version, and sensor data path.
     GameplayData gameplayData =
-    GameplayData(startTimestamp, endTimestamp, score, 0, '', '');
+        GameplayData(startTimestamp, endTimestamp, score, 0, '', '');
     Provider.of<SessionDataModel>(_context, listen: false)
         .handleGameplayData(gameplayData);
   }
@@ -125,20 +129,6 @@ class FlappyGame extends Game with HasWidgetsOverlay {
         gameOverMenuOverlayName,
         Center(
           child: Column(
-            // Column is also a layout widget. It takes a list of children and
-            // arranges them vertically. By default, it sizes itself to fit its
-            // children horizontally, and tries to be as tall as its parent.
-            //
-            // Invoke "debug painting" (press "p" in the console, choose the
-            // "Toggle Debug Paint" action from the Flutter Inspector in Android
-            // Studio, or the "Toggle Debug Paint" command in Visual Studio Code)
-            // to see the wireframe for each widget.
-            //
-            // Column has various properties to control how it sizes itself and
-            // how it positions its children. Here we use mainAxisAlignment to
-            // center the children vertically; the main axis here is the vertical
-            // axis because Columns are vertical (the cross axis would be
-            // horizontal).
             mainAxisAlignment: MainAxisAlignment.center,
             mainAxisSize: MainAxisSize.min,
             children: <Widget>[
@@ -162,41 +152,76 @@ class FlappyGame extends Game with HasWidgetsOverlay {
   }
 
   void _initialize() async {
-    _targetController = TargetController(
-        0.5,
-        'targets/cherry.png',
-        Rect.fromLTWH(0.1, 0.1, 0.8, 0.8),
-        0.2,
-        0.2,
-        0.1,
-        0.5);
-    _birdController = BirdController();
-    _columnObstacleController = ColumnObstacleController(
-        0.5,
-        'obstacles/column.png',
-        Rect.fromLTWH(0.35, 0.1, 0.3, 0.9),
-        0.4,
-        0.7,
-        0.6,
-        0.8);
-    _skyBackgroundController = RepeatingBackgroundController(
-        'backgrounds/sky.png', 0.5, Rect.fromLTWH(0.0, 0.0, 1.0, 1.0));
-    _grassBackgroundController = RepeatingBackgroundController(
-        'backgrounds/ground.png', 0.5, Rect.fromLTWH(0.0, 0.9, 1.0, 0.1));
+    Flame.bgm.play('background_music.mp3', volume: _gameSettings.musicVolume);
 
+    // Region for cherry collision will be centered.
+    Rect cherryRegionForCollision = Rect.fromLTWH(
+        (1.0 - _gameSettings.cherryFractionWidthForCollision) / 2.0,
+        (1.0 - _gameSettings.cherryFractionHeightForCollision) / 2.0,
+        _gameSettings.cherryFractionWidthForCollision,
+        _gameSettings.cherryFractionHeightForCollision);
+    _targetController = TargetController(
+        _gameSettings.cherryVelocityInScreenWidthsPerSecond,
+        _cherryImagePath,
+        cherryRegionForCollision,
+        _gameSettings.cherryWidthAsScreenWidthFraction,
+        _gameSettings.cherryHeightAsScreenWidthFraction,
+        _gameSettings.cherryLocationMinBoundFromScreenTop,
+        _gameSettings.cherryLocationMaxBoundFromScreenTop,
+        _gameSettings.cherrySpawnRatePerSecond);
+
+    _birdController = BirdController(_gameSettings);
+
+    // Region for column collision will be centered in the horizontal direction.
+    // All of the region to not count for collisions in the vertical direction
+    // will be taken off of the top.
+    Rect columnRegionForCollision = Rect.fromLTWH(
+        (1.0 - _gameSettings.columnFractionWidthForCollision) / 2.0,
+        1.0 - _gameSettings.columnFractionHeightForCollision,
+        _gameSettings.columnFractionWidthForCollision,
+        _gameSettings.columnFractionHeightForCollision);
+    _columnObstacleController = ColumnObstacleController(
+        _gameSettings.columnVelocityInScreenWidthsPerSecond,
+        _columnImagePath,
+        columnRegionForCollision,
+        _gameSettings.columnWidthAsScreenWidthFraction,
+        _gameSettings.columnHeightAsScreenWidthFraction,
+        _gameSettings.columnHeightMinBoundFromScreenTop,
+        _gameSettings.columnHeightMaxBoundFromScreenTop);
+
+    // Sky background will take up entire width, and its height (in terms of
+    // screen height fraction) will start from the top of the screen.
+    Rect skyBackgroundLocation = Rect.fromLTWH(
+        0.0, 0.0, 1.0, _gameSettings.skyBackgroundFractionScreenHeight);
+    _skyBackgroundController = RepeatingBackgroundController(
+        _skyImagePath,
+        _gameSettings.backgroundScrollRateInScreenWidthsPerSecond,
+        skyBackgroundLocation);
+
+    // Grass background will take up entire width. Its height (in terms of
+    // screen height fraction) will start from the bottom of the screen.
+    Rect groundBackgroundLocation = Rect.fromLTWH(
+        0.0,
+        1.0 - _gameSettings.groundBackgroundFractionScreenHeight,
+        1.0,
+        _gameSettings.groundBackgroundFractionScreenHeight);
+    _grassBackgroundController = RepeatingBackgroundController(
+        _groundImagePath,
+        _gameSettings.backgroundScrollRateInScreenWidthsPerSecond,
+        groundBackgroundLocation);
+
+    // TODO: Is this necessary, or potentially problematic?
     resize(await Flame.util.initialDimensions());
 
     _targetController.initialize(_screenSize);
-    _birdController.initialize(_screenSize, _tileSize);
+    _birdController.initialize(_screenSize);
     _columnObstacleController.initialize(_screenSize);
     _skyBackgroundController.initialize(screenSize);
     _grassBackgroundController.initialize(screenSize);
 
     // Add temporary score counter.
     _currentScore = 0;
-    _gameStartMillisecondsSinceEpoch = DateTime
-        .now()
-        .millisecondsSinceEpoch;
+    _gameStartMillisecondsSinceEpoch = DateTime.now().millisecondsSinceEpoch;
     _updateScoreCounter();
   }
 
@@ -209,19 +234,19 @@ class FlappyGame extends Game with HasWidgetsOverlay {
                 mainAxisAlignment: MainAxisAlignment.start,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Score: $_currentScore',
-                      style: TextStyle(
-                          color: Color.fromARGB(255, 0, 0, 0),
-                          fontWeight: FontWeight.bold,
-                          fontSize: 54,
-                          decoration: TextDecoration.none)),
-                  Text('High Score: $_highScore',
-                      style: TextStyle(
-                          color: Color.fromARGB(255, 0, 0, 0),
-                          fontWeight: FontWeight.bold,
-                          fontSize: 24,
-                          decoration: TextDecoration.none)),
-                ])));
+              Text('Score: $_currentScore',
+                  style: TextStyle(
+                      color: Color.fromARGB(255, 0, 0, 0),
+                      fontWeight: FontWeight.bold,
+                      fontSize: 54,
+                      decoration: TextDecoration.none)),
+              Text('High Score: $_highScore',
+                  style: TextStyle(
+                      color: Color.fromARGB(255, 0, 0, 0),
+                      fontWeight: FontWeight.bold,
+                      fontSize: 24,
+                      decoration: TextDecoration.none)),
+            ])));
   }
 
   void onTapDown(TapDownDetails details) {

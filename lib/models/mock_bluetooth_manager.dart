@@ -1,0 +1,69 @@
+import 'dart:async';
+import 'dart:core';
+import 'dart:math';
+
+class MockBluetoothManager {
+  final int _timestepMicroseconds;
+  final int _periodBetweenSpikesMicroseconds;
+  final int _baselineAmplitude;
+  final int _baselineUniformNoiseAmplitude;
+  final int _spikeAmplitude;
+
+  // ignore: close_sinks
+  final _controller = StreamController<EmgSample>();
+  bool _streamInitialized = false;
+  Random _randomNumberGenerator;
+  int _microsecondsSinceLastSpike = 0;
+  int _timestampCounterMicroseconds = 0;
+
+  MockBluetoothManager(sampleRate, spikeRate, baselineAmplitude,
+      baselineUniformNoiseAmplitude, spikeAmplitude)
+      : _timestepMicroseconds = (1000000.0 / sampleRate).round(),
+        _periodBetweenSpikesMicroseconds = (1000000.0 / spikeRate).round(),
+        _baselineAmplitude = baselineAmplitude,
+        _baselineUniformNoiseAmplitude = baselineUniformNoiseAmplitude,
+        _spikeAmplitude = spikeAmplitude {
+    _randomNumberGenerator = Random();
+  }
+
+  void _initializeStream() {
+    if (_streamInitialized) {
+      return;
+    }
+
+    Timer.periodic(Duration(microseconds: _timestepMicroseconds), (_) {
+      int dataValue;
+      if (_microsecondsSinceLastSpike > _periodBetweenSpikesMicroseconds) {
+        dataValue = _spikeAmplitude;
+        _microsecondsSinceLastSpike -= _periodBetweenSpikesMicroseconds;
+      } else {
+        int randomNoiseOffset = _randomNumberGenerator
+                .nextInt(2 * _baselineUniformNoiseAmplitude + 1) -
+            _baselineUniformNoiseAmplitude;
+        dataValue = _baselineAmplitude + randomNoiseOffset;
+      }
+
+      _controller.sink.add(EmgSample(
+          (_timestampCounterMicroseconds / 1000.0).round(), dataValue));
+      _timestampCounterMicroseconds += _timestepMicroseconds;
+      _microsecondsSinceLastSpike += _timestepMicroseconds;
+    });
+  }
+
+  void closeStream() {
+    _controller.close();
+  }
+
+  // Doesn't actually start adding values to stream until this is called.
+  Stream<EmgSample> getRawDataStream() {
+    _initializeStream();
+    return _controller.stream;
+  }
+}
+
+class EmgSample {
+  final int timestamp;
+  final int value;
+
+  EmgSample(this.timestamp, this.value);
+}
