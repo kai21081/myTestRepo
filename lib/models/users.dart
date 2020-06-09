@@ -4,8 +4,9 @@ import 'package:flutter/foundation.dart';
 class User {
   final String _id;
   int highScore;
+  int mostRecentActivityTimestamp;
 
-  User(this._id, this.highScore);
+  User(this._id, this.highScore, this.mostRecentActivityTimestamp);
 
   String get id => _id;
 
@@ -16,7 +17,7 @@ class User {
 
 class UsersModel extends ChangeNotifier {
   final List<User> _users = [
-    User('Jacob', 100),
+    User('Jacob', 100, 0),
   ];
 
   UnmodifiableListView<User> get users => UnmodifiableListView(_users);

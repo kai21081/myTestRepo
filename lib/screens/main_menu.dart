@@ -81,6 +81,20 @@ class _MainMenuPageState extends State<MainMenuPage> {
             ),
             SizedBox(height: 20),
             FloatingActionButton.extended(
+              label: Text('Practice Mode'),
+              heroTag: 'practice_mode',
+              onPressed: () {
+                Navigator.push(context, MaterialPageRoute(builder: (context) {
+                  FlappyGame game = FlappyGame(context, practiceMode: true);
+                  TapGestureRecognizer tapper = TapGestureRecognizer();
+                  tapper.onTapDown = game.onTapDown;
+                  Util().addGestureRecognizer(tapper);
+                  return game.widget;
+                }));
+              },
+            ),
+            SizedBox(height: 20),
+            FloatingActionButton.extended(
               label: Text('Game Settings'),
               heroTag: 'game_settings',
               onPressed: () {

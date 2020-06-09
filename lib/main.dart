@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flame/flame.dart';
 import 'package:flame/util.dart';
 import 'package:flutter/material.dart';
@@ -5,6 +7,7 @@ import 'package:flutter/services.dart';
 import 'package:gameplayground/models/session_data.dart';
 import 'package:gameplayground/models/surface_emg_game_database.dart';
 import 'package:gameplayground/screens/select_user.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:provider/provider.dart';
 
 void main() async {
@@ -25,6 +28,19 @@ void main() async {
 
   SurfaceEmgGameDatabase database = SurfaceEmgGameDatabase();
   await database.initialize();
+
+  // TODO: DELETE THIS.
+  final applicationDocumentsDirectory = await getApplicationSupportDirectory();
+  print(await applicationDocumentsDirectory.exists());
+  print(applicationDocumentsDirectory.toString());
+
+  File testFile = File('${applicationDocumentsDirectory.path}/test.txt');
+  testFile.create();
+  testFile.writeAsString('line one');
+
+
+
+  // THROUGH HERE.
 
   runApp(MyApp(SessionDataModel(database)));
 }

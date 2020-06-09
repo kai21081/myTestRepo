@@ -22,4 +22,15 @@ class GameplayData {
   void addSession(Session session) {
     _session = session;
   }
+
+  Map<String, dynamic> asMap() {
+    return {
+      'startTime': startTime,
+      'endTime': endTime,
+      'score': score,
+      'activationCount': activationCount,
+      'appVersion': appVersion,
+      'sensorDataPath': sensorDataPath
+    };
+  }
 }

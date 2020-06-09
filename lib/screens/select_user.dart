@@ -1,7 +1,6 @@
-import 'dart:collection';
-
 import 'package:flutter/material.dart';
 import 'package:gameplayground/models/session_data.dart';
+import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:gameplayground/models/users.dart';
 
@@ -135,6 +134,12 @@ class _UserListItem extends StatelessWidget {
   Widget build(BuildContext context) {
     ColorScheme contextColorScheme = Theme.of(context).colorScheme;
 
+    DateTime mostRecentActivityDateTime =
+        DateTime.fromMillisecondsSinceEpoch(_user.mostRecentActivityTimestamp);
+
+    String formattedMostRecentActivityDateTime =
+        DateFormat.yMMMMd('en_US').format(mostRecentActivityDateTime);
+
     return Padding(
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
         child: Card(
@@ -194,8 +199,8 @@ class _UserListItem extends StatelessWidget {
                 style: TextStyle(
                     color: contextColorScheme.onBackground, fontSize: 24),
               ),
-              subtitle:
-                  Text('High Score: ${_user.highScore}\nLast Activity: Today'),
+              subtitle: Text('High Score: ${_user.highScore}\n'
+                  'Last Activity: $formattedMostRecentActivityDateTime'),
             )));
   }
 }

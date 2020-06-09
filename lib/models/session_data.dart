@@ -1,26 +1,34 @@
 import 'dart:collection';
 import 'package:flutter/foundation.dart';
+import 'package:gameplayground/models/game_settings.dart';
 
 import 'package:gameplayground/models/gameplay_data.dart';
-import 'package:gameplayground/models/gameplay_database.dart';
 import 'package:gameplayground/models/session.dart';
 import 'package:gameplayground/models/users.dart';
 import 'package:gameplayground/models/surface_emg_game_database.dart';
-
 
 class SessionDataModel extends ChangeNotifier {
   User _user;
   Session _session;
   final SurfaceEmgGameDatabase _database;
+  GameSettings _gameSettings = GameSettings();
 
   SessionDataModel(this._database);
 
   String get currentUserId => _user.id;
 
+  GameSettings get gameSettings => _gameSettings;
+
   // Creates a _Session with the provided start time. Should maybe check to make
   // sure there isn't already a current session.
   void startSession(int startTime) {
     _session = Session(startTime);
+  }
+
+  void updateGameSettings(GameSettings settings) {
+    _gameSettings = settings;
+    _database.updateUserSettings(
+        currentUserId, _gameSettings.userModifiableSettings);
   }
 
   // Get all users from User Database.
@@ -33,9 +41,9 @@ class SessionDataModel extends ChangeNotifier {
     return _database.containsUserWithId(user.id);
   }
 
-  // Adds user to User Database.
+  // Adds user to User Database with default user modifiable settings.
   void createUser(String id) {
-    _database.createUserIfAbsent(id);
+    _database.createUserIfAbsent(id, GameSettings().userModifiableSettings);
     notifyListeners();
   }
 
@@ -47,8 +55,12 @@ class SessionDataModel extends ChangeNotifier {
 
   // Set the user as the current user.
   // Verify it is one of the possible users.
-  void setUser(String id) {
+  Future<void> setUser(String id) async {
     _user = _database.getUserWithId(id);
+    _gameSettings = GameSettings.withUserModifiableSettings(
+        await _database.getUserSettings(id));
+    _database.updateUserMostRecentActivity(
+        id, DateTime.now().millisecondsSinceEpoch);
   }
 
   // User must be set.
@@ -69,8 +81,12 @@ class SessionDataModel extends ChangeNotifier {
   //  - Session ID
   //  - User ID
   void handleGameplayData(GameplayData gameplayData) {
-    _database.insertDataFromSingleGame(
-        gameplayData.startTime, gameplayData.endTime, _user.id,
-        gameplayData.score);
+    _database.insertDataFromSingleGame(gameplayData.startTime,
+        gameplayData.endTime, _user.id, gameplayData.score);
+  }
+
+  void handleCalibrationData(int value) {
+    _database.addCalibrationValue(
+        _user.id, value, DateTime.now().millisecondsSinceEpoch);
   }
 }

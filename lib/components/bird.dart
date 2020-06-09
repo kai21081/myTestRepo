@@ -97,7 +97,8 @@ class Bird {
 
   void _applyPositionUpdate(double positionChange) {
     // Determine the max translation to not have bird fall off screen.
-    double maxTranslation = _screenSize.height - _position.top;
+    double maxTranslation =
+        _screenSize.height - _position.height - _position.top;
 
     // Translation is bounded to keep bird in bounds relative to bottom of
     // screen.

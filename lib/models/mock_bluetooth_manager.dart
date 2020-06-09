@@ -15,6 +15,7 @@ class MockBluetoothManager {
   Random _randomNumberGenerator;
   int _microsecondsSinceLastSpike = 0;
   int _timestampCounterMicroseconds = 0;
+  Timer _dataGeneratingTimer;
 
   MockBluetoothManager(sampleRate, spikeRate, baselineAmplitude,
       baselineUniformNoiseAmplitude, spikeAmplitude)
@@ -31,7 +32,8 @@ class MockBluetoothManager {
       return;
     }
 
-    Timer.periodic(Duration(microseconds: _timestepMicroseconds), (_) {
+    _dataGeneratingTimer =
+        Timer.periodic(Duration(microseconds: _timestepMicroseconds), (_) {
       int dataValue;
       if (_microsecondsSinceLastSpike > _periodBetweenSpikesMicroseconds) {
         dataValue = _spikeAmplitude;
@@ -51,6 +53,7 @@ class MockBluetoothManager {
   }
 
   void closeStream() {
+    _dataGeneratingTimer.cancel();
     _controller.close();
   }
 
