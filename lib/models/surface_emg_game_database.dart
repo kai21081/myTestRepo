@@ -23,7 +23,7 @@ class SurfaceEmgGameDatabase extends ChangeNotifier {
 
   Database _database;
 
-  void initialize() async {
+  Future<void> initialize() async {
     var databasesDirectoryPath = await getDatabasesPath();
 
     // Make sure the directory exists.

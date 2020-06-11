@@ -1,4 +1,5 @@
 import 'dart:collection';
+import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:gameplayground/models/game_record_saving_utils.dart';
 import 'package:gameplayground/models/game_settings.dart';
@@ -81,19 +82,32 @@ class SessionDataModel extends ChangeNotifier {
   // add:
   //  - Session ID
   //  - User ID
-  void handleGameplayData(GameplayData gameplayData, GameSettings gameSettings,
+
+  // Writes general data about the game to a database. Writes game results and
+  // EMG sensor data to file on disk.
+  //
+  // Returns a future that is fulfilled when database write is completed.
+  Future<void> handleGameplayData(
+      GameplayData gameplayData,
+      GameSettings gameSettings,
       UnmodifiableListView<ProcessedDataPoint> emgData) async {
-    _database.insertDataFromSingleGame(gameplayData.startTime,
-        gameplayData.endTime, _currentUser.id, gameplayData.score);
-    _currentUser = await _database.getUserWithId(_currentUser.id);
+    Future<void> databaseWriteAndUserUpdateFuture = _database
+        .insertDataFromSingleGame(gameplayData.startTime, gameplayData.endTime,
+            _currentUser.id, gameplayData.score)
+        .then((_) async {
+      _currentUser = await _database.getUserWithId(_currentUser.id);
+    });
 
-    final supportDirectory = await getApplicationSupportDirectory();
-    final String savePath = path.join(
-        supportDirectory.path,
-        _makeTimestampIdFilename(gameplayData.startTime, _currentUser.id) +
-            _jsonExtension);
+    getApplicationSupportDirectory().then((Directory supportDirectory) {
+      final String savePath = path.join(
+          supportDirectory.path,
+          _makeTimestampIdFilename(gameplayData.startTime, _currentUser.id) +
+              _jsonExtension);
+      saveGameRecord(
+          _currentUser.id, gameSettings, emgData, gameplayData, savePath);
+    });
 
-    saveGameRecord(_currentUser.id, gameSettings, emgData, gameplayData, savePath);
+    return databaseWriteAndUserUpdateFuture;
   }
 
   void handleCalibrationData(int value) {
