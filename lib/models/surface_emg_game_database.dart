@@ -5,7 +5,6 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:gameplayground/models/game_settings.dart';
 import 'package:gameplayground/models/users.dart';
-import 'package:path/path.dart';
 import 'package:sqflite/sqflite.dart';
 
 // TODO: If the database read is fast enough, don't cache, it's confusing.
@@ -16,105 +15,13 @@ class SurfaceEmgGameDatabase extends ChangeNotifier {
   final String _calibrationDataDatabaseName = 'CalibrationData';
   final String _gameplayDataDatabaseName = 'GameplayData';
 
-  final String _idColumnName = 'id';
-  final String _idColumnType = 'TEXT';
-  final String _highScoreColumnName = 'highScore';
-  final String _highScoreColumnType = 'INTEGER';
-  final String _mostRecentActivityTimestampColumnName =
-      'mostRecentActivityTimestamp';
-  final String _mostRecentActivityTimestampColumnType = 'INTEGER';
-
-  final String _timestampMillisecondsSinceEpochColumnName =
-      'timestampMillisecondsSinceEpoch';
-  final String _timestampMillisecondsSinceEpochColumnType = 'INTEGER';
-  final String _calibrationValueColumnName = 'calibrationValue';
-  final String _calibrationValueColumnType = 'INTEGER';
-
-  final String _gameStartTimestampColumnName = 'gameStartTimestamp';
-  final String _gameStartTimestampColumnType = 'INTEGER';
-  final String _gameEndTimestampColumnName = 'gameEndTimestamp';
-  final String _gameEndTimestampColumnType = 'INTEGER';
-  final String _gameUserIdColumnName = 'userId';
-  final String _gameUserIdColumnType = 'TEXT';
-  final String _gameScoreColumnName = 'score';
-  final String _gameScoreColumnType = 'INTEGER';
-
-  static const String flapVelocityInScreenHeightFractionPerSecondColumnName =
-      'flapVelocityInScreenHeightFractionPerSecond';
-  static const String flapVelocityInScreenHeightFractionPerSecondColumnType =
-      'REAL';
-  static const String
-      terminalVelocityInScreenHeightFractionPerSecondColumnName =
-      'terminalVelocityInScreenHeightFractionPerSecond';
-  static const String
-      terminalVelocityInScreenHeightFractionPerSecondColumnType = 'REAL';
-  static const String scrollVelocityInScreenWidthsPerSecondColumnName =
-      'scrollVelocityInScreenWidthsPerSecond';
-  static const String scrollVelocityInScreenWidthsPerSecondColumnType = 'REAL';
-  static const String includeCherriesColumnName = 'includeCherries';
-  static const String includeCherriesColumnType = 'INTEGER';
-  static const String cherrySpawnRatePerSecondColumnName =
-      'cherrySpawnRatePerSecond';
-  static const String cherrySpawnRatePerSecondColumnType = 'REAL';
-  static const String cherryWidthAsScreenWidthFractionColumnName =
-      'cherryWidthAsScreenWidthFraction';
-  static const String cherryWidthAsScreenWidthFractionColumnType = 'REAL';
-  static const String cherryHeightAsScreenWidthFractionColumnName =
-      'cherryHeightAsScreenWidthFraction';
-  static const String cherryHeightAsScreenWidthFractionColumnType = 'REAL';
-  static const String cherryFractionWidthForCollisionColumnName =
-      'cherryFractionWidthForCollision';
-  static const String cherryFractionWidthForCollisionColumnType = 'REAL';
-  static const String cherryFractionHeightForCollisionColumnName =
-      'cherryFractionHeightForCollision';
-  static const String cherryFractionHeightForCollisionColumnType = 'REAL';
-  static const String cherryLocationMinBoundFromScreenTopColumnName =
-      'cherryLocationMinBoundFromScreenTop';
-  static const String cherryLocationMinBoundFromScreenTopColumnType = 'REAL';
-  static const String cherryLocationMaxBoundFromScreenTopColumnName =
-      'cherryLocationMaxBoundFromScreenTop';
-  static const String cherryLocationMaxBoundFromScreenTopColumnType = 'REAL';
-  static const String includeColumnsColumnName = 'includeColumns';
-  static const String includeColumnsColumnType = 'INTEGER';
-  static const String columnSpawnRatePerSecondColumnName =
-      'columnSpawnRatePerSecond';
-  static const String columnSpawnRatePerSecondColumnType = 'REAL';
-  static const String columnWidthAsScreenWidthFractionColumnName =
-      'columnWidthAsScreenWidthFraction';
-  static const String columnWidthAsScreenWidthFractionColumnType = 'REAL';
-  static const String columnHeightAsScreenWidthFractionColumnName =
-      'columnHeightAsScreenWidthFraction';
-  static const String columnHeightAsScreenWidthFractionColumnType = 'REAL';
-  static const String columnFractionWidthForCollisionColumnName =
-      'columnFractionWidthForCollision';
-  static const String columnFractionWidthForCollisionColumnType = 'REAL';
-  static const String columnFractionHeightForCollisionColumnName =
-      'columnFractionHeightForCollision';
-  static const String columnFractionHeightForCollisionColumnType = 'REAL';
-  static const String columnHeightMinBoundFromScreenTopColumnName =
-      'columnHeightMinBoundFromScreenTop';
-  static const String columnHeightMinBoundFromScreenTopColumnType = 'REAL';
-  static const String columnHeightMaxBoundFromScreenTopColumnName =
-      'columnHeightMaxBoundFromScreenTop';
-  static const String columnHeightMaxBoundFromScreenTopColumnType = 'REAL';
-  static const String practiceModeColumnName = 'practiceMode';
-  static const String practiceModeColumnType = 'INTEGER';
-  static const String playMusicColumnName = 'playMusic';
-  static const String playMusicColumnType = 'INTEGER';
-  static const String musicVolumeColumnName = 'musicVolume';
-  static const String musicVolumeColumnType = 'REAL';
-  static const String skyBackgroundFractionScreenHeightColumnName =
-      'skyBackgroundFractionScreenHeight';
-  static const String skyBackgroundFractionScreenHeightColumnType = 'REAL';
-  static const String groundBackgroundFractionScreenHeightColumnName =
-      'groundBackgroundFractionScreenHeight';
-  static const String groundBackgroundFractionScreenHeightColumnType = 'REAL';
+  final String _columnTypeText = 'TEXT';
+  final String _columnTypeInteger = 'INTEGER';
+  final String _columnTypeReal = 'REAL';
 
   final int _defaultInitialHighScore = 0;
 
   Database _database;
-
-  Map<String, User> _userData;
 
   void initialize() async {
     var databasesDirectoryPath = await getDatabasesPath();
@@ -127,16 +34,11 @@ class SurfaceEmgGameDatabase extends ChangeNotifier {
     // Open the database file.
     _database = await openDatabase(_databaseFilename);
 
-    // Insert user data, calibration data and gameplay databases to database
-    // file if missing. They should only need adding the first time the App is
-    // run.
-    await _insertUserDataDatabaseIfAbsent();
-    await _insertCalibrationDataDatabaseIfAbsent();
-    await _insertGameplayDataDatabaseIfAbsent();
-
-    // Load user data (this should be small enough that there won't be issues
-    // storing it in memory.
-    await _loadUserData();
+    // Insert user data, calibration data and gameplay data tables into database
+    // if missing. They should only need adding the first time the App is run.
+    await _insertUserDataTableIfAbsent();
+    await _insertCalibrationDataTableIfAbsent();
+    await _insertGameplayDataTableIfAbsent();
 
     // TODO: Delete eventually - just rebuilds database for debugging.
     await createUserIfAbsent('first', GameSettings().userModifiableSettings);
@@ -148,81 +50,73 @@ class SurfaceEmgGameDatabase extends ChangeNotifier {
     updateHighScoreIfBetter('first', 10);
   }
 
-  Future<bool> _databaseHasTable(String tableName) async {
+  Future<bool> _tableExists(String tableName) async {
     var tableNameColumns = await _database.query('sqlite_master',
         columns: ['name'], where: 'type = ?', whereArgs: ['table']);
     return tableNameColumns
         .any((nameColumn) => nameColumn['name'] == tableName);
   }
 
-  Future<void> _insertUserDataDatabaseIfAbsent() async {
-    if (await _databaseHasTable(_userDataDatabaseName)) {
+  Future<void> _insertUserDataTableIfAbsent() async {
+    if (await _tableExists(_userDataDatabaseName)) {
       return;
     }
 
     _database.execute('CREATE TABLE $_userDataDatabaseName '
-        '($_idColumnName $_idColumnType PRIMARY KEY, '
-        '$_highScoreColumnName $_highScoreColumnType, '
-        '$_mostRecentActivityTimestampColumnName '
-        '$_mostRecentActivityTimestampColumnType, '
-        '$scrollVelocityInScreenWidthsPerSecondColumnName '
-        '$scrollVelocityInScreenWidthsPerSecondColumnType,'
-        '$flapVelocityInScreenHeightFractionPerSecondColumnName '
-        '$flapVelocityInScreenHeightFractionPerSecondColumnType,'
-        '$terminalVelocityInScreenHeightFractionPerSecondColumnName '
-        '$terminalVelocityInScreenHeightFractionPerSecondColumnType,'
-        '$cherrySpawnRatePerSecondColumnName '
-        '$cherrySpawnRatePerSecondColumnType,'
-        '$playMusicColumnName $playMusicColumnType,'
-        '$musicVolumeColumnName $musicVolumeColumnType'
+        '(${_DatabaseColumnNames.idColumnName} '
+        '$_columnTypeText PRIMARY KEY, '
+        '${_DatabaseColumnNames.highScoreColumnName} $_columnTypeInteger, '
+        '${_DatabaseColumnNames.mostRecentActivityTimestampColumnName} '
+        '$_columnTypeInteger, '
+        '${_DatabaseColumnNames.scrollVelocityInScreenWidthsPerSecondColumnName} '
+        '$_columnTypeReal,'
+        '${_DatabaseColumnNames.flapVelocityInScreenHeightFractionPerSecondColumnName} '
+        '$_columnTypeReal,'
+        '${_DatabaseColumnNames.terminalVelocityInScreenHeightFractionPerSecondColumnName} '
+        '$_columnTypeReal,'
+        '${_DatabaseColumnNames.cherrySpawnRatePerSecondColumnName} '
+        '$_columnTypeReal,'
+        '${_DatabaseColumnNames.playMusicColumnName} $_columnTypeInteger,'
+        '${_DatabaseColumnNames.musicVolumeColumnName} $_columnTypeReal'
         ')');
   }
 
-  Future<void> _insertCalibrationDataDatabaseIfAbsent() async {
-    if (await _databaseHasTable(_calibrationDataDatabaseName)) {
+  Future<void> _insertCalibrationDataTableIfAbsent() async {
+    if (await _tableExists(_calibrationDataDatabaseName)) {
       return;
     }
 
     _database.execute('CREATE TABLE $_calibrationDataDatabaseName '
-        '($_idColumnName $_idColumnType,'
-        '$_calibrationValueColumnName $_calibrationValueColumnType, '
-        '$_timestampMillisecondsSinceEpochColumnName '
-        '$_timestampMillisecondsSinceEpochColumnType'
+        '(${_DatabaseColumnNames.idColumnName} $_columnTypeInteger,'
+        '${_DatabaseColumnNames.calibrationValueColumnName} '
+        '$_columnTypeInteger, '
+        '${_DatabaseColumnNames.timestampMillisecondsSinceEpochColumnName} '
+        '$_columnTypeInteger'
         ')');
   }
 
-  Future<void> _insertGameplayDataDatabaseIfAbsent() async {
-    if (await _databaseHasTable(_gameplayDataDatabaseName)) {
+  Future<void> _insertGameplayDataTableIfAbsent() async {
+    if (await _tableExists(_gameplayDataDatabaseName)) {
       return;
     }
 
     _database.execute('CREATE TABLE $_gameplayDataDatabaseName '
-        '($_gameStartTimestampColumnName $_gameStartTimestampColumnType '
-        'PRIMARY KEY, '
-        '$_gameEndTimestampColumnName $_gameEndTimestampColumnType, '
-        '$_gameUserIdColumnName $_gameUserIdColumnType, '
-        '$_gameScoreColumnName $_gameScoreColumnType)');
-  }
-
-  Future<UnmodifiableListView<User>> _loadUserData() async {
-    var tableRows = await _database.query(_userDataDatabaseName);
-
-    // TODO: Why is this done twice here?
-    _userData = Map.fromIterable(tableRows,
-        key: (row) => row[_idColumnName],
-        value: (row) => User(row[_idColumnName], row[_highScoreColumnName],
-            row[_mostRecentActivityTimestampColumnName]));
-
-    List<User> userList = List.of(tableRows.map((row) {
-      return User(row[_idColumnName], row[_highScoreColumnName],
-          row[_mostRecentActivityTimestampColumnName]);
-    }));
-
-    return UnmodifiableListView(userList);
+        '(${_DatabaseColumnNames.gameStartTimestampColumnName} '
+        '$_columnTypeInteger PRIMARY KEY, '
+        '${_DatabaseColumnNames.gameEndTimestampColumnName} '
+        '$_columnTypeInteger, '
+        '${_DatabaseColumnNames.gameUserIdColumnName} $_columnTypeText, '
+        '${_DatabaseColumnNames.gameScoreColumnName} $_columnTypeInteger)');
   }
 
   Future<bool> containsUserWithId(String id) async {
-    return _userData.containsKey(id);
+    var userIds = await _database.query(_userDataDatabaseName,
+        columns: [_DatabaseColumnNames.idColumnName],
+        where: '${_DatabaseColumnNames.idColumnName} = ?',
+        whereArgs: [id],
+        limit: 1);
+
+    return userIds.length > 0;
   }
 
   // Does nothing if called with a user ID for a user that already exists.
@@ -233,141 +127,222 @@ class SurfaceEmgGameDatabase extends ChangeNotifier {
       return;
     }
 
-    // Add to data loaded by object.
-    User newUser = User(
-        id, _defaultInitialHighScore, DateTime.now().millisecondsSinceEpoch);
-    _userData[id] = newUser;
-
     // Add to database.
     await _database.insert(_userDataDatabaseName, {
-      _idColumnName: newUser.id,
-      _highScoreColumnName: newUser.highScore,
-      _mostRecentActivityTimestampColumnName:
-          newUser.mostRecentActivityTimestamp
+      _DatabaseColumnNames.idColumnName: id,
+      _DatabaseColumnNames.highScoreColumnName: _defaultInitialHighScore,
+      _DatabaseColumnNames.mostRecentActivityTimestampColumnName:
+          DateTime.now().millisecondsSinceEpoch
     });
-    updateUserSettings(id, userModifiableSettings);
+
+    updateUserGameSettings(id, userModifiableSettings);
   }
 
   // Will fail ungracefully if start timestamp already exists in table.
   // TODO: Do some more robust error handling.
   Future<void> insertDataFromSingleGame(int gameStartTimestamp,
       int gameEndTimestamp, String userId, int score) async {
-    var preTableRows = await _database.query(_gameplayDataDatabaseName);
-    preTableRows.forEach((entry) => print(entry));
-
     await _database.insert(_gameplayDataDatabaseName, {
-      _gameStartTimestampColumnName: gameStartTimestamp,
-      _gameEndTimestampColumnName: gameEndTimestamp,
-      _gameUserIdColumnName: userId,
-      _gameScoreColumnName: score
+      _DatabaseColumnNames.gameStartTimestampColumnName: gameStartTimestamp,
+      _DatabaseColumnNames.gameEndTimestampColumnName: gameEndTimestamp,
+      _DatabaseColumnNames.gameUserIdColumnName: userId,
+      _DatabaseColumnNames.gameScoreColumnName: score
     });
 
-    var postTableRows = await _database.query(_gameplayDataDatabaseName);
-    postTableRows.forEach((entry) => print(entry));
+    updateHighScoreIfBetter(userId, score);
   }
 
   Future<void> deleteUser(String id) async {
-    _userData.remove(id);
     await _database.delete(_userDataDatabaseName,
-        where: '$_idColumnName = ?', whereArgs: [id]);
+        where: '${_DatabaseColumnNames.idColumnName} = ?', whereArgs: [id]);
   }
 
-  UnmodifiableListView<User> getUserData() {
-    return UnmodifiableListView(_userData.values);
+  Future<UnmodifiableListView<User>> getUserData() async {
+    var tableRows = _database.query(_userDataDatabaseName, columns: [
+      _DatabaseColumnNames.idColumnName,
+      _DatabaseColumnNames.highScoreColumnName,
+      _DatabaseColumnNames.mostRecentActivityTimestampColumnName
+    ]);
+
+    return tableRows.then((List<Map<String, dynamic>> tableData) {
+      return UnmodifiableListView(tableData.map((Map<String, dynamic> row) {
+        return User(
+            row[_DatabaseColumnNames.idColumnName],
+            row[_DatabaseColumnNames.highScoreColumnName],
+            row[_DatabaseColumnNames.mostRecentActivityTimestampColumnName]);
+      }));
+    });
   }
 
   // Should only be called on user that actually exists.
   // TODO: handle case where it is called with an invalid user
-  User getUserWithId(String id) {
-    return _userData[id];
+  Future<User> getUserWithId(String id) async {
+    List<Map<String, dynamic>> userQueryData =
+        await _database.query(_userDataDatabaseName,
+            columns: [
+              _DatabaseColumnNames.highScoreColumnName,
+              _DatabaseColumnNames.mostRecentActivityTimestampColumnName
+            ],
+            where: '${_DatabaseColumnNames.idColumnName} = ?',
+            whereArgs: [id],
+            limit: 1);
+
+    Map<String, dynamic> userData = userQueryData.first;
+
+    return User(id, userData[_DatabaseColumnNames.highScoreColumnName],
+        userData[_DatabaseColumnNames.mostRecentActivityTimestampColumnName]);
   }
 
-  void updateHighScoreIfBetter(String id, int score) {
-    if (score <= _userData[id].highScore) {
+  void updateHighScoreIfBetter(String id, int score) async {
+    List<Map<String, dynamic>> userHighScoreData = await _database.query(
+        _userDataDatabaseName,
+        columns: [_DatabaseColumnNames.highScoreColumnName],
+        where: '${_DatabaseColumnNames.idColumnName} = ?',
+        whereArgs: [id],
+        limit: 1);
+
+    int userCurrentHighScore =
+        userHighScoreData.first[_DatabaseColumnNames.highScoreColumnName];
+
+    if (score <= userCurrentHighScore) {
       return;
     }
 
-    // Update is user data for this object.
-    _userData[id].highScore = score;
-
     // Update in the database.
-    _database.update(_userDataDatabaseName, {_highScoreColumnName: score},
-        where: '$_idColumnName = ?', whereArgs: [id]);
+    _database.update(_userDataDatabaseName,
+        {_DatabaseColumnNames.highScoreColumnName: score},
+        where: '${_DatabaseColumnNames.idColumnName} = ?', whereArgs: [id]);
   }
 
-  void updateUserSettings(
+  void updateUserGameSettings(
       String id, UserModifiableSettings userModifiableSettings) {
     _database.update(
         _userDataDatabaseName,
         {
-          flapVelocityInScreenHeightFractionPerSecondColumnName:
+          _DatabaseColumnNames
+                  .flapVelocityInScreenHeightFractionPerSecondColumnName:
               userModifiableSettings
                   .flapVelocityInScreenHeightFractionPerSecond,
-          terminalVelocityInScreenHeightFractionPerSecondColumnName:
+          _DatabaseColumnNames
+                  .terminalVelocityInScreenHeightFractionPerSecondColumnName:
               userModifiableSettings
                   .terminalVelocityInScreenHeightFractionPerSecond,
-          scrollVelocityInScreenWidthsPerSecondColumnName:
+          _DatabaseColumnNames.scrollVelocityInScreenWidthsPerSecondColumnName:
               userModifiableSettings.scrollVelocityInScreenWidthsPerSecond,
-          cherrySpawnRatePerSecondColumnName:
+          _DatabaseColumnNames.cherrySpawnRatePerSecondColumnName:
               userModifiableSettings.cherrySpawnRatePerSecond,
-          playMusicColumnName: userModifiableSettings.playMusic ? 0 : 1,
-          musicVolumeColumnName: userModifiableSettings.musicVolume
+          _DatabaseColumnNames.playMusicColumnName:
+              userModifiableSettings.playMusic ? 0 : 1,
+          _DatabaseColumnNames.musicVolumeColumnName:
+              userModifiableSettings.musicVolume
         },
-        where: '$_idColumnName = ?',
+        where: '${_DatabaseColumnNames.idColumnName} = ?',
         whereArgs: [id]);
   }
 
   void updateUserMostRecentActivity(String id, int timestamp) {
     // TODO: Exception if timestamp is earlier than current value?
-    _userData[id].mostRecentActivityTimestamp = timestamp;
     _database.update(_userDataDatabaseName,
-        {_mostRecentActivityTimestampColumnName: timestamp},
-        where: '$_idColumnName = ?', whereArgs: [id]);
+        {_DatabaseColumnNames.mostRecentActivityTimestampColumnName: timestamp},
+        where: '${_DatabaseColumnNames.idColumnName} = ?', whereArgs: [id]);
   }
 
   void addCalibrationValue(String id, int value, int timestamp) async {
-    print('*************************');
-    print('Adding Calibration Value:');
-    print('Before Addition:');
-    var preTableRows = await _database.query(_calibrationDataDatabaseName);
-    preTableRows.forEach((entry) => print(entry));
-
     await _database.insert(_calibrationDataDatabaseName, {
-      _idColumnName: id,
-      _calibrationValueColumnName: value,
-      _timestampMillisecondsSinceEpochColumnName: timestamp,
+      _DatabaseColumnNames.idColumnName: id,
+      _DatabaseColumnNames.calibrationValueColumnName: value,
+      _DatabaseColumnNames.timestampMillisecondsSinceEpochColumnName: timestamp,
     });
-
-    print('After Addition:');
-    var postTableRows = await _database.query(_calibrationDataDatabaseName);
-    postTableRows.forEach((entry) => print(entry));
-    print('*************************');
   }
 
   Future<UserModifiableSettings> getUserSettings(String userId) async {
     var tableRows = await _database.query(_userDataDatabaseName,
         columns: [
-          flapVelocityInScreenHeightFractionPerSecondColumnName,
-          terminalVelocityInScreenHeightFractionPerSecondColumnName,
-          scrollVelocityInScreenWidthsPerSecondColumnName,
-          cherrySpawnRatePerSecondColumnName,
-          playMusicColumnName,
-          musicVolumeColumnName
+          _DatabaseColumnNames
+              .flapVelocityInScreenHeightFractionPerSecondColumnName,
+          _DatabaseColumnNames
+              .terminalVelocityInScreenHeightFractionPerSecondColumnName,
+          _DatabaseColumnNames.scrollVelocityInScreenWidthsPerSecondColumnName,
+          _DatabaseColumnNames.cherrySpawnRatePerSecondColumnName,
+          _DatabaseColumnNames.playMusicColumnName,
+          _DatabaseColumnNames.musicVolumeColumnName
         ],
-        where: '$_idColumnName = ?',
+        where: '${_DatabaseColumnNames.idColumnName} = ?',
         whereArgs: [userId]);
 
     // TODO: Throw and exception if there is more than 1 element.
-    var userSettingsValues = tableRows[0];
+    var userSettingsValues = tableRows.first;
 
     return UserModifiableSettings(
+        userSettingsValues[_DatabaseColumnNames
+            .flapVelocityInScreenHeightFractionPerSecondColumnName],
+        userSettingsValues[_DatabaseColumnNames
+            .terminalVelocityInScreenHeightFractionPerSecondColumnName],
+        userSettingsValues[_DatabaseColumnNames
+            .scrollVelocityInScreenWidthsPerSecondColumnName],
         userSettingsValues[
-            flapVelocityInScreenHeightFractionPerSecondColumnName],
-        userSettingsValues[
-            terminalVelocityInScreenHeightFractionPerSecondColumnName],
-        userSettingsValues[scrollVelocityInScreenWidthsPerSecondColumnName],
-        userSettingsValues[cherrySpawnRatePerSecondColumnName],
-        userSettingsValues[playMusicColumnName] != 0,
-        userSettingsValues[musicVolumeColumnName]);
+            _DatabaseColumnNames.cherrySpawnRatePerSecondColumnName],
+        userSettingsValues[_DatabaseColumnNames.playMusicColumnName] != 0,
+        userSettingsValues[_DatabaseColumnNames.musicVolumeColumnName]);
   }
+}
+
+class _DatabaseColumnNames {
+  static const String idColumnName = 'id';
+  static const String highScoreColumnName = 'highScore';
+  static const String mostRecentActivityTimestampColumnName =
+      'mostRecentActivityTimestamp';
+  static const String timestampMillisecondsSinceEpochColumnName =
+      'timestampMillisecondsSinceEpoch';
+  static const String calibrationValueColumnName = 'calibrationValue';
+
+  static const String gameStartTimestampColumnName = 'gameStartTimestamp';
+  static const String gameEndTimestampColumnName = 'gameEndTimestamp';
+  static const String gameUserIdColumnName = 'userId';
+  static const String gameScoreColumnName = 'score';
+
+  static const String flapVelocityInScreenHeightFractionPerSecondColumnName =
+      'flapVelocityInScreenHeightFractionPerSecond';
+  static const String
+      terminalVelocityInScreenHeightFractionPerSecondColumnName =
+      'terminalVelocityInScreenHeightFractionPerSecond';
+  static const String scrollVelocityInScreenWidthsPerSecondColumnName =
+      'scrollVelocityInScreenWidthsPerSecond';
+  static const String includeCherriesColumnName = 'includeCherries';
+  static const String cherrySpawnRatePerSecondColumnName =
+      'cherrySpawnRatePerSecond';
+  static const String cherryWidthAsScreenWidthFractionColumnName =
+      'cherryWidthAsScreenWidthFraction';
+  static const String cherryHeightAsScreenWidthFractionColumnName =
+      'cherryHeightAsScreenWidthFraction';
+  static const String cherryFractionWidthForCollisionColumnName =
+      'cherryFractionWidthForCollision';
+  static const String cherryFractionHeightForCollisionColumnName =
+      'cherryFractionHeightForCollision';
+  static const String cherryLocationMinBoundFromScreenTopColumnName =
+      'cherryLocationMinBoundFromScreenTop';
+  static const String cherryLocationMaxBoundFromScreenTopColumnName =
+      'cherryLocationMaxBoundFromScreenTop';
+  static const String includeColumnsColumnName = 'includeColumns';
+  static const String columnSpawnRatePerSecondColumnName =
+      'columnSpawnRatePerSecond';
+  static const String columnWidthAsScreenWidthFractionColumnName =
+      'columnWidthAsScreenWidthFraction';
+  static const String columnHeightAsScreenWidthFractionColumnName =
+      'columnHeightAsScreenWidthFraction';
+  static const String columnFractionWidthForCollisionColumnName =
+      'columnFractionWidthForCollision';
+  static const String columnFractionHeightForCollisionColumnName =
+      'columnFractionHeightForCollision';
+  static const String columnHeightMinBoundFromScreenTopColumnName =
+      'columnHeightMinBoundFromScreenTop';
+  static const String columnHeightMaxBoundFromScreenTopColumnName =
+      'columnHeightMaxBoundFromScreenTop';
+  static const String practiceModeColumnName = 'practiceMode';
+  static const String playMusicColumnName = 'playMusic';
+  static const String musicVolumeColumnName = 'musicVolume';
+  static const String skyBackgroundFractionScreenHeightColumnName =
+      'skyBackgroundFractionScreenHeight';
+  static const String groundBackgroundFractionScreenHeightColumnName =
+      'groundBackgroundFractionScreenHeight';
 }

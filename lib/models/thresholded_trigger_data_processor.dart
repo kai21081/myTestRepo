@@ -7,9 +7,9 @@ class ThresholdedTriggerDataProcessor {
   List<ProcessedDataPoint> _processedDataPoints = List<ProcessedDataPoint>();
 
   double _previousFilteredValue = 0.0;
-  double _smoothingFactor = 0.05;
-  double _triggeringThreshold = 5.0;
-  static const int _triggerSignalRefractoryPeriodMilliseconds = 100;
+  double _smoothingFactor = 0.25;
+  double _triggeringThreshold = 10.0;
+  static const int _triggerSignalRefractoryPeriodMilliseconds = 2000;
   int _lastTriggerTimestamp = -_triggerSignalRefractoryPeriodMilliseconds;
 
   UnmodifiableListView<ProcessedDataPoint> get processedDataPoints =>
@@ -53,11 +53,13 @@ class ThresholdedTriggerDataProcessor {
     _bluetoothManager.closeStream();
   }
 
+  void resetDataLog() {
+    _processedDataPoints = List<ProcessedDataPoint>();
+  }
+
   void _logDataPoint(ProcessedDataPoint dataPoint) {
     _processedDataPoints.add(dataPoint);
   }
-
-  void writeLogDataToFile() {}
 }
 
 class ProcessedDataPoint {

@@ -1,62 +1,63 @@
 import 'dart:collection';
 import 'package:flutter/foundation.dart';
+import 'package:gameplayground/models/game_record_saving_utils.dart';
 import 'package:gameplayground/models/game_settings.dart';
 
 import 'package:gameplayground/models/gameplay_data.dart';
-import 'package:gameplayground/models/session.dart';
+import 'package:gameplayground/models/thresholded_trigger_data_processor.dart';
 import 'package:gameplayground/models/users.dart';
 import 'package:gameplayground/models/surface_emg_game_database.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:path/path.dart' as path;
 
 class SessionDataModel extends ChangeNotifier {
-  User _user;
-  Session _session;
+  static final String _jsonExtension = '.json';
+
+  User _currentUser;
   final SurfaceEmgGameDatabase _database;
-  GameSettings _gameSettings = GameSettings();
+  GameSettings _gameSettings;
 
   SessionDataModel(this._database);
 
-  String get currentUserId => _user.id;
+  String get currentUserId => _currentUser.id;
+
+  int get currentUserHighScore => _currentUser.highScore;
 
   GameSettings get gameSettings => _gameSettings;
 
-  // Creates a _Session with the provided start time. Should maybe check to make
-  // sure there isn't already a current session.
-  void startSession(int startTime) {
-    _session = Session(startTime);
-  }
-
   void updateGameSettings(GameSettings settings) {
     _gameSettings = settings;
-    _database.updateUserSettings(
+    _database.updateUserGameSettings(
         currentUserId, _gameSettings.userModifiableSettings);
   }
 
   // Get all users from User Database.
-  UnmodifiableListView<User> getUsers() {
+  Future<UnmodifiableListView<User>> getUsers() async {
     return _database.getUserData();
   }
 
-  // Checks if user already exists with same ID.
+  // Checks if user already exists with same ID. Returns false if exists.
   Future<bool> canAddUser(User user) async {
-    return _database.containsUserWithId(user.id);
+    return _database.containsUserWithId(user.id).then((value) => !value);
   }
 
   // Adds user to User Database with default user modifiable settings.
-  void createUser(String id) {
-    _database.createUserIfAbsent(id, GameSettings().userModifiableSettings);
+  Future<void> createUser(String id) async {
+    await _database.createUserIfAbsent(
+        id, GameSettings().userModifiableSettings);
     notifyListeners();
   }
 
   // Deletes user from User Database.
-  void deleteUser(String id) {
-    _database.deleteUser(id);
+  void deleteUser(String id) async {
+    await _database.deleteUser(id);
     notifyListeners();
   }
 
   // Set the user as the current user.
   // Verify it is one of the possible users.
   Future<void> setUser(String id) async {
-    _user = _database.getUserWithId(id);
+    _currentUser = await _database.getUserWithId(id);
     _gameSettings = GameSettings.withUserModifiableSettings(
         await _database.getUserSettings(id));
     _database.updateUserMostRecentActivity(
@@ -80,13 +81,27 @@ class SessionDataModel extends ChangeNotifier {
   // add:
   //  - Session ID
   //  - User ID
-  void handleGameplayData(GameplayData gameplayData) {
+  void handleGameplayData(GameplayData gameplayData, GameSettings gameSettings,
+      UnmodifiableListView<ProcessedDataPoint> emgData) async {
     _database.insertDataFromSingleGame(gameplayData.startTime,
-        gameplayData.endTime, _user.id, gameplayData.score);
+        gameplayData.endTime, _currentUser.id, gameplayData.score);
+    _currentUser = await _database.getUserWithId(_currentUser.id);
+
+    final supportDirectory = await getApplicationSupportDirectory();
+    final String savePath = path.join(
+        supportDirectory.path,
+        _makeTimestampIdFilename(gameplayData.startTime, _currentUser.id) +
+            _jsonExtension);
+
+    saveGameRecord(_currentUser.id, gameSettings, emgData, gameplayData, savePath);
   }
 
   void handleCalibrationData(int value) {
     _database.addCalibrationValue(
-        _user.id, value, DateTime.now().millisecondsSinceEpoch);
+        _currentUser.id, value, DateTime.now().millisecondsSinceEpoch);
   }
+}
+
+String _makeTimestampIdFilename(int timestamp, String id) {
+  return 'timestamp_${timestamp}_user_$id';
 }

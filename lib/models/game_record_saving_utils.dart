@@ -7,12 +7,15 @@ import 'gameplay_data.dart';
 import 'thresholded_trigger_data_processor.dart';
 
 void saveGameRecord(
+    String userId,
     GameSettings gameSettings,
     UnmodifiableListView<ProcessedDataPoint> processedData,
     GameplayData gameplayData,
     String savePath) {
   // Convert to JSON.
   Map<String, dynamic> jsonData = Map<String, dynamic>();
+
+  jsonData['userId'] = userId;
 
   // Add data about game settings.
   jsonData['scrollVelocityInScreenWidthsPerSecond'] =

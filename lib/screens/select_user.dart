@@ -1,3 +1,5 @@
+import 'dart:collection';
+
 import 'package:flutter/material.dart';
 import 'package:gameplayground/models/session_data.dart';
 import 'package:intl/intl.dart';
@@ -21,17 +23,25 @@ class _SelectUserPageState extends State<SelectUserPage> {
         title: Text('UW Surface EMG Game', style: TextStyle(fontSize: 28)),
         centerTitle: true,
       ),
-      body: _buildBodyCustomScrollView(),
+      body: Consumer<SessionDataModel>(
+          builder: (context, sessionDataModel, child) {
+        return FutureBuilder(
+            future: sessionDataModel.getUsers(),
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.done) {
+                return _buildBodyCustomScrollView(snapshot.data);
+              } else {
+                return Center(child: CircularProgressIndicator());
+              }
+            });
+      }),
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: () {
-          Navigator.push<void>(
+        onPressed: () async {
+          await Navigator.push<void>(
               context,
               MaterialPageRoute(
                   builder: (context) => _NewUserDialogue(),
                   fullscreenDialog: true));
-//          showModalBottomSheet<void>(
-//              context: context,
-//              builder: (context) => _buildModalBottomSheet(context));
         },
         icon: const Icon(Icons.add),
         label: Text('New User'),
@@ -40,14 +50,15 @@ class _SelectUserPageState extends State<SelectUserPage> {
     );
   }
 
-  CustomScrollView _buildBodyCustomScrollView() {
+  CustomScrollView _buildBodyCustomScrollView(
+      UnmodifiableListView<User> userData) {
     return CustomScrollView(
       slivers: [
         Consumer<SessionDataModel>(builder: (context, sessionDataModel, child) {
           return SliverList(
             delegate: SliverChildBuilderDelegate((context, index) {
-              return _UserListItem(sessionDataModel.getUsers()[index]);
-            }, childCount: sessionDataModel.getUsers().length),
+              return _UserListItem(userData[index]);
+            }, childCount: userData.length),
           );
         })
       ],
@@ -63,8 +74,6 @@ class _NewUserDialogue extends StatefulWidget {
 class _NewUserDialogueState extends State<_NewUserDialogue> {
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
     return MediaQuery.removePadding(
         context: context,
         child: Scaffold(
@@ -107,7 +116,7 @@ class _NewUserFormState extends State<_NewUserForm> {
                     icon: const Icon(Icons.person),
                     labelText: "User ID *'"),
                 onSaved: (value) {
-                  Provider.of<SessionDataModel>(context, listen: false)
+                   Provider.of<SessionDataModel>(context, listen: false)
                       .createUser(value);
                 }),
             SizedBox(height: 24),

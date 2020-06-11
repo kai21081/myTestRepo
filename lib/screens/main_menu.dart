@@ -1,8 +1,10 @@
 import 'package:flame/util.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
-import 'package:gameplayground/flappy_game.dart';
+import 'package:gameplayground/screens/flappy_game.dart';
+import 'package:gameplayground/models/mock_bluetooth_manager.dart';
 import 'package:gameplayground/models/session_data.dart';
+import 'package:gameplayground/models/thresholded_trigger_data_processor.dart';
 import 'package:gameplayground/screens/game_settings.dart';
 import 'package:gameplayground/screens/input_timeseries.dart';
 import 'package:provider/provider.dart';
@@ -71,7 +73,11 @@ class _MainMenuPageState extends State<MainMenuPage> {
               heroTag: 'play_game',
               onPressed: () {
                 Navigator.push(context, MaterialPageRoute(builder: (context) {
-                  FlappyGame game = FlappyGame(context);
+                  FlappyGame game = FlappyGame(
+                      context,
+                      ThresholdedTriggerDataProcessor(
+                          MockBluetoothManager(100, 2, 10, 5, 50)),
+                      practiceMode: false);
                   TapGestureRecognizer tapper = TapGestureRecognizer();
                   tapper.onTapDown = game.onTapDown;
                   Util().addGestureRecognizer(tapper);
@@ -85,7 +91,11 @@ class _MainMenuPageState extends State<MainMenuPage> {
               heroTag: 'practice_mode',
               onPressed: () {
                 Navigator.push(context, MaterialPageRoute(builder: (context) {
-                  FlappyGame game = FlappyGame(context, practiceMode: true);
+                  FlappyGame game = FlappyGame(
+                      context,
+                      ThresholdedTriggerDataProcessor(
+                          MockBluetoothManager(100, 10, 10, 5, 50)),
+                      practiceMode: true);
                   TapGestureRecognizer tapper = TapGestureRecognizer();
                   tapper.onTapDown = game.onTapDown;
                   Util().addGestureRecognizer(tapper);
@@ -98,8 +108,10 @@ class _MainMenuPageState extends State<MainMenuPage> {
               label: Text('Game Settings'),
               heroTag: 'game_settings',
               onPressed: () {
-                Navigator.push(context,
-                    MaterialPageRoute(builder: (context) => GameSettingsPage()));
+                Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (context) => GameSettingsPage()));
               },
             ),
             SizedBox(height: 20),

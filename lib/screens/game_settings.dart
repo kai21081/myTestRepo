@@ -1,6 +1,5 @@
 import 'package:flame/game.dart';
 import 'package:flutter/material.dart';
-import 'package:gameplayground/models/session.dart';
 import 'package:gameplayground/models/game_settings.dart';
 import 'package:gameplayground/models/session_data.dart';
 import 'package:gameplayground/screens/main_menu.dart';

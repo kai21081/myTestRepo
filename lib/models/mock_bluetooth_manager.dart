@@ -10,7 +10,7 @@ class MockBluetoothManager {
   final int _spikeAmplitude;
 
   // ignore: close_sinks
-  final _controller = StreamController<EmgSample>();
+  StreamController<EmgSample> _controller;
   bool _streamInitialized = false;
   Random _randomNumberGenerator;
   int _microsecondsSinceLastSpike = 0;
@@ -31,6 +31,8 @@ class MockBluetoothManager {
     if (_streamInitialized) {
       return;
     }
+
+    _controller = StreamController<EmgSample>();
 
     _dataGeneratingTimer =
         Timer.periodic(Duration(microseconds: _timestepMicroseconds), (_) {
@@ -55,6 +57,7 @@ class MockBluetoothManager {
   void closeStream() {
     _dataGeneratingTimer.cancel();
     _controller.close();
+    _streamInitialized = false;
   }
 
   // Doesn't actually start adding values to stream until this is called.

@@ -1,3 +1,4 @@
+import 'dart:collection';
 import 'dart:math';
 import 'dart:ui';
 
@@ -10,10 +11,12 @@ import 'package:gameplayground/components/column_obstacle_controller.dart';
 import 'package:gameplayground/components/repeating_background_controller.dart';
 import 'package:gameplayground/components/target_controller.dart';
 import 'package:gameplayground/models/gameplay_data.dart';
+import 'package:gameplayground/models/mock_bluetooth_manager.dart';
 import 'package:gameplayground/models/session_data.dart';
+import 'package:gameplayground/models/thresholded_trigger_data_processor.dart';
 import 'package:provider/provider.dart';
 
-import 'models/game_settings.dart';
+import '../models/game_settings.dart';
 
 class FlappyGame extends Game with HasWidgetsOverlay {
   static const String _cherryImagePath = 'targets/cherry.png';
@@ -31,18 +34,22 @@ class FlappyGame extends Game with HasWidgetsOverlay {
   BuildContext _context;
 
   int _currentScore;
-  int _highScore = 0;
+  int _highScore;
   int _gameStartMillisecondsSinceEpoch;
   bool _isGameOver = false;
   bool _practiceMode;
+
+  ThresholdedTriggerDataProcessor _dataProcessor;
 
   final String _gameOverMenuOverlayName = 'game_over_menu';
   final String _currentScoreOverlayName = 'current_score';
   final String _endGameOverlayName = 'end_game';
 
-  FlappyGame(this._context, {practiceMode: false}) {
+  FlappyGame(this._context, this._dataProcessor, {practiceMode: false}) {
     _gameSettings =
-        Provider.of<SessionDataModel>(_context, listen: false).gameSettings;
+        Provider
+            .of<SessionDataModel>(_context, listen: false)
+            .gameSettings;
     _practiceMode = practiceMode;
     _initialize();
   }
@@ -88,7 +95,8 @@ class FlappyGame extends Game with HasWidgetsOverlay {
     _screenSize = size;
     super.resize(size);
 
-    _callFunctionOnControllers((controller) => controller.resizeScreen(size));
+    _callFunctionOnControllers(
+            (controller) => controller.resizeScreen(_screenSize));
   }
 
   @override
@@ -102,7 +110,7 @@ class FlappyGame extends Game with HasWidgetsOverlay {
 
     bool columnCollisionDetected = _gameSettings.includeColumns
         ? _columnObstacleController
-            .isCollidingWithObstacle(_birdController.getBirdPosition())
+        .isCollidingWithObstacle(_birdController.getBirdPosition())
         : false;
 
     bool gameEndingGroundCollisionDetected =
@@ -111,33 +119,36 @@ class FlappyGame extends Game with HasWidgetsOverlay {
     // If a collision is detected (and it is not in practice mode), end game.
     if (!_practiceMode &&
         (gameEndingGroundCollisionDetected || columnCollisionDetected)) {
-      int gameEndMillisecondsSinceEpoch = DateTime.now().millisecondsSinceEpoch;
+      _dataProcessor.stopProcessing();
+      int gameEndMillisecondsSinceEpoch = DateTime
+          .now()
+          .millisecondsSinceEpoch;
+
+      UnmodifiableListView<ProcessedDataPoint> gameEmgData =
+          _dataProcessor.processedDataPoints;
+
+      GameplayData gameplayData = GameplayData(
+          _gameStartMillisecondsSinceEpoch, gameEndMillisecondsSinceEpoch,
+          _currentScore);
+
+      Provider.of<SessionDataModel>(_context, listen: false)
+          .handleGameplayData(gameplayData, _gameSettings, gameEmgData);
+
+      _dataProcessor.resetDataLog();
+
 
       _birdController.killBird();
       _isGameOver = true;
       _highScore = max(_highScore, _currentScore);
-      print(
-          Provider.of<SessionDataModel>(_context, listen: false).currentUserId);
       _showGameOverMenu();
-
-      _addGameDataToDatabase(_gameStartMillisecondsSinceEpoch,
-          gameEndMillisecondsSinceEpoch, _currentScore);
     }
 
     int birdCollisionCount = _gameSettings.includeCherries
         ? _targetController.removeTargetsWithCollisionAndCalculateCount(
-            _birdController.getBirdPosition())
+        _birdController.getBirdPosition())
         : 0;
     _currentScore += birdCollisionCount;
     _updateScoreCounter();
-  }
-
-  void _addGameDataToDatabase(int startTimestamp, int endTimestamp, int score) {
-    // TODO: Actually store activation count, app version, and sensor data path.
-    GameplayData gameplayData =
-        GameplayData(startTimestamp, endTimestamp, score, 0, '', '');
-    Provider.of<SessionDataModel>(_context, listen: false)
-        .handleGameplayData(gameplayData);
   }
 
   void _showGameOverMenu() {
@@ -170,6 +181,10 @@ class FlappyGame extends Game with HasWidgetsOverlay {
     if (_gameSettings.playMusic) {
       Flame.bgm.play('background_music.mp3', volume: _gameSettings.musicVolume);
     }
+
+    _highScore = Provider
+        .of<SessionDataModel>(_context, listen: false)
+        .currentUserHighScore;
 
     _birdController = BirdController(_gameSettings);
 
@@ -234,16 +249,22 @@ class FlappyGame extends Game with HasWidgetsOverlay {
     // TODO: Is this necessary, or potentially problematic?
     resize(await Flame.util.initialDimensions());
     _callFunctionOnControllers(
-        (controller) => controller.initialize(_screenSize));
+            (controller) => controller.initialize(_screenSize));
 
     // Add score counter.
     _currentScore = 0;
-    _gameStartMillisecondsSinceEpoch = DateTime.now().millisecondsSinceEpoch;
+    _gameStartMillisecondsSinceEpoch = DateTime
+        .now()
+        .millisecondsSinceEpoch;
     _updateScoreCounter();
 
     if (_practiceMode) {
       _addEndGameButton();
     }
+
+    _dataProcessor.startProcessing(() {
+      _birdController.onTapDown();
+    }, true);
   }
 
   void _updateScoreCounter() {
