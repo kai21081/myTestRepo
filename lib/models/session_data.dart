@@ -6,10 +6,12 @@ import 'package:gameplayground/models/game_settings.dart';
 
 import 'package:gameplayground/models/gameplay_data.dart';
 import 'package:gameplayground/models/thresholded_trigger_data_processor.dart';
-import 'package:gameplayground/models/users.dart';
+import 'package:gameplayground/models/user.dart';
 import 'package:gameplayground/models/surface_emg_game_database.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as path;
+
+import 'calibration_data.dart';
 
 class SessionDataModel extends ChangeNotifier {
   static final String _jsonExtension = '.json';
@@ -110,8 +112,12 @@ class SessionDataModel extends ChangeNotifier {
     return databaseWriteAndUserUpdateFuture;
   }
 
-  void handleCalibrationData(int value) {
-    _database.addCalibrationValue(
+  Future<UserCalibrationData> getMostRecentCurrentUserCalibrationValue() async {
+    return _database.getMostRecentUserCalibrationValue(currentUserId);
+  }
+
+  Future<void> handleCalibrationData(int value) {
+    return _database.addCalibrationValue(
         _currentUser.id, value, DateTime.now().millisecondsSinceEpoch);
   }
 }

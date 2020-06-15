@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:gameplayground/models/session_data.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
-import 'package:gameplayground/models/users.dart';
+import 'package:gameplayground/models/user.dart';
 
 import 'main_menu.dart';
 

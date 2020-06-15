@@ -3,8 +3,9 @@ import 'dart:core';
 import 'dart:io';
 
 import 'package:flutter/foundation.dart';
+import 'package:gameplayground/models/calibration_data.dart';
 import 'package:gameplayground/models/game_settings.dart';
-import 'package:gameplayground/models/users.dart';
+import 'package:gameplayground/models/user.dart';
 import 'package:sqflite/sqflite.dart';
 
 // TODO: If the database read is fast enough, don't cache, it's confusing.
@@ -247,12 +248,33 @@ class SurfaceEmgGameDatabase extends ChangeNotifier {
         where: '${_DatabaseColumnNames.idColumnName} = ?', whereArgs: [id]);
   }
 
-  void addCalibrationValue(String id, int value, int timestamp) async {
+  Future<void> addCalibrationValue(String id, int value, int timestamp) async {
     await _database.insert(_calibrationDataDatabaseName, {
       _DatabaseColumnNames.idColumnName: id,
       _DatabaseColumnNames.calibrationValueColumnName: value,
       _DatabaseColumnNames.timestampMillisecondsSinceEpochColumnName: timestamp,
     });
+  }
+
+  Future<UserCalibrationData> getMostRecentUserCalibrationValue(
+      String id) async {
+    var tableRows = await _database.query(_calibrationDataDatabaseName,
+        columns: [
+          _DatabaseColumnNames.calibrationValueColumnName,
+          _DatabaseColumnNames.timestampMillisecondsSinceEpochColumnName
+        ],
+        where: '${_DatabaseColumnNames.idColumnName} = ?',
+        whereArgs: [id],
+        orderBy:
+            '${_DatabaseColumnNames.timestampMillisecondsSinceEpochColumnName}');
+    if (tableRows.isEmpty) {
+      return UserCalibrationData.buildNoValue();
+    }
+
+    return UserCalibrationData.buildWithValue(
+        tableRows.last[_DatabaseColumnNames.calibrationValueColumnName],
+        tableRows.last[
+            _DatabaseColumnNames.timestampMillisecondsSinceEpochColumnName]);
   }
 
   Future<UserModifiableSettings> getUserSettings(String userId) async {
