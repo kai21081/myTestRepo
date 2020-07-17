@@ -1,6 +1,7 @@
 import 'dart:collection';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
+import 'package:gameplayground/models/bluetooth_manager.dart';
 import 'package:gameplayground/models/game_record_saving_utils.dart';
 import 'package:gameplayground/models/game_settings.dart';
 
@@ -18,13 +19,16 @@ class SessionDataModel extends ChangeNotifier {
 
   User _currentUser;
   final SurfaceEmgGameDatabase _database;
+  final BluetoothManager bluetoothManager;
   GameSettings _gameSettings;
 
-  SessionDataModel(this._database);
+  SessionDataModel(this._database, this.bluetoothManager);
 
   String get currentUserId => _currentUser.id;
 
   int get currentUserHighScore => _currentUser.highScore;
+
+  String get currentUserDeviceName => _currentUser.deviceName;
 
   GameSettings get gameSettings => _gameSettings;
 
@@ -119,6 +123,14 @@ class SessionDataModel extends ChangeNotifier {
   Future<void> handleCalibrationData(int value) {
     return _database.addCalibrationValue(
         _currentUser.id, value, DateTime.now().millisecondsSinceEpoch);
+  }
+
+  Future<void> handleDeviceName(String deviceName) {
+    return _database
+        .updateDeviceNameForUser(_currentUser.id, deviceName)
+        .then((_) async {
+      _currentUser = await _database.getUserWithId(_currentUser.id);
+    });
   }
 }
 

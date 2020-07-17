@@ -4,6 +4,7 @@ import 'dart:math';
 import 'package:charts_flutter/flutter.dart' as charts;
 import 'package:flutter/material.dart';
 import 'package:gameplayground/models/calibration_data.dart';
+import 'package:gameplayground/models/emg_sample.dart';
 import 'package:gameplayground/models/mock_bluetooth_manager.dart';
 import 'package:gameplayground/models/session_data.dart';
 import 'package:provider/provider.dart';
@@ -118,8 +119,10 @@ class _CalibrationPageState extends State<CalibrationPage> {
             }, _labelThresholdSlider),
             SizedBox(height: 30),
             FloatingActionButton.extended(
-                label: Text('Set to max'),
+                label: Text('Set at Max'),
                 heroTag: 'set_to_max_button',
+                backgroundColor: theme.colorScheme.onPrimary,
+                foregroundColor: theme.colorScheme.primary,
                 onPressed: () {
                   setState(() {
                     _thresholdSliderValue =

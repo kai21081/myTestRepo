@@ -1,15 +1,23 @@
 import 'dart:collection';
+import 'dart:io';
 
-import 'package:gameplayground/models/mock_bluetooth_manager.dart';
+import 'package:gameplayground/models/emg_sample.dart';
+
+import 'bluetooth_manager.dart';
 
 class ThresholdedTriggerDataProcessor {
-  MockBluetoothManager _bluetoothManager;
+  static const String bluetoothManagerCallbackName =
+      'ThresholdedTriggerDataProcessorCallback';
+  BluetoothManager _bluetoothManager;
   List<ProcessedDataPoint> _processedDataPoints = List<ProcessedDataPoint>();
 
+  Function _onTriggerCallback;
+  bool _logData;
+
   double _previousFilteredValue = 0.0;
-  double _smoothingFactor = 0.25;
-  double _triggeringThreshold = 10.0;
-  static const int _triggerSignalRefractoryPeriodMilliseconds = 2000;
+  double _smoothingFactor = 0.05;
+  double _triggeringThreshold = 4000.0;
+  static const int _triggerSignalRefractoryPeriodMilliseconds = 500;
   int _lastTriggerTimestamp = -_triggerSignalRefractoryPeriodMilliseconds;
 
   UnmodifiableListView<ProcessedDataPoint> get processedDataPoints =>
@@ -17,40 +25,53 @@ class ThresholdedTriggerDataProcessor {
 
   ThresholdedTriggerDataProcessor(this._bluetoothManager);
 
-  void startProcessing(Function onTriggerCallback, bool logData) {
-    Stream<ProcessedDataPoint> preProcessedData =
-        _bluetoothManager.getRawDataStream().map((emgSample) {
-      return ProcessedDataPoint(emgSample.timestamp, emgSample.value);
-    });
+  void startProcessing(Function(ProcessedDataPoint) onTriggerCallback,
+      {bool logData: false}) {
+    _onTriggerCallback = onTriggerCallback;
+    _logData = logData;
+    _bluetoothManager.addHandleValueCallback(
+        bluetoothManagerCallbackName, _handleNewEmgSample);
+  }
 
-    Stream<ProcessedDataPoint> filteredDataWithTriggers =
-        preProcessedData.map((data) {
-      data.filteredValue = _smoothingFactor * data.rawValue.toDouble() +
-          (1.0 - _smoothingFactor) * _previousFilteredValue;
-      _previousFilteredValue = data.filteredValue;
-      data.trigger = data.filteredValue > _triggeringThreshold;
-      return data;
-    });
+  void _handleNewEmgSample(EmgSample sample) {
+    print('handling value');
+    ProcessedDataPoint processedDataPoint =
+        ProcessedDataPoint.fromEmgSample(sample);
 
-    filteredDataWithTriggers.listen((data) {
-      bool passTriggerToGame = data.trigger &&
-          data.timestamp - _lastTriggerTimestamp >
-              _triggerSignalRefractoryPeriodMilliseconds;
-      data.triggerSignalPassedToGame = passTriggerToGame;
+    processedDataPoint.filteredValue =
+        _smoothingFactor * processedDataPoint.rawValue.toDouble() +
+            (1.0 - _smoothingFactor) * _previousFilteredValue;
 
-      if (passTriggerToGame) {
-        onTriggerCallback();
-        _lastTriggerTimestamp = data.timestamp;
-      }
+    // TODO: figure out if this should stay (approach used for Unity version.)
+    processedDataPoint.trigger =
+        (processedDataPoint.rawValue > _triggeringThreshold) &&
+            (processedDataPoint.rawValue > _previousFilteredValue * 1.18);
 
-      if (logData) {
-        _logDataPoint(data);
-      }
-    });
+    _previousFilteredValue = processedDataPoint.filteredValue;
+
+    bool passTriggerToGame = processedDataPoint.trigger &&
+        processedDataPoint.timestamp - _lastTriggerTimestamp >
+            _triggerSignalRefractoryPeriodMilliseconds;
+    processedDataPoint.triggerSignalPassedToGame = passTriggerToGame;
+
+    print('filtered value: ${processedDataPoint.filteredValue}, '
+        'trigger: ${processedDataPoint.trigger}, '
+        'passTriggerToGame: ${processedDataPoint.triggerSignalPassedToGame}');
+
+    if (passTriggerToGame) {
+      _onTriggerCallback(processedDataPoint);
+      _lastTriggerTimestamp = processedDataPoint.timestamp;
+    }
+
+    if (_logData) {
+      _logDataPoint(processedDataPoint);
+    }
   }
 
   void stopProcessing() {
-    _bluetoothManager.closeStream();
+    _bluetoothManager.removeHandleValueCallback(bluetoothManagerCallbackName);
+    _onTriggerCallback = null;
+    _logData = null;
   }
 
   void resetDataLog() {
@@ -70,6 +91,10 @@ class ProcessedDataPoint {
   bool triggerSignalPassedToGame;
 
   ProcessedDataPoint(this.timestamp, this.rawValue);
+
+  ProcessedDataPoint.fromEmgSample(EmgSample sample)
+      : this.timestamp = sample.timestamp,
+        this.rawValue = sample.value;
 
   Map<String, dynamic> asMap() {
     return {

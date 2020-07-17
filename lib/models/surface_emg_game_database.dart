@@ -40,15 +40,6 @@ class SurfaceEmgGameDatabase extends ChangeNotifier {
     await _insertUserDataTableIfAbsent();
     await _insertCalibrationDataTableIfAbsent();
     await _insertGameplayDataTableIfAbsent();
-
-    // TODO: Delete eventually - just rebuilds database for debugging.
-    await createUserIfAbsent('first', GameSettings().userModifiableSettings);
-    await createUserIfAbsent('second', GameSettings().userModifiableSettings);
-    await createUserIfAbsent('third', GameSettings().userModifiableSettings);
-
-    updateHighScoreIfBetter('first', 1);
-    updateHighScoreIfBetter('first', 20);
-    updateHighScoreIfBetter('first', 10);
   }
 
   Future<bool> _tableExists(String tableName) async {
@@ -69,6 +60,8 @@ class SurfaceEmgGameDatabase extends ChangeNotifier {
         '${_DatabaseColumnNames.highScoreColumnName} $_columnTypeInteger, '
         '${_DatabaseColumnNames.mostRecentActivityTimestampColumnName} '
         '$_columnTypeInteger, '
+        '${_DatabaseColumnNames.deviceNameColumnName} '
+        '$_columnTypeText,'
         '${_DatabaseColumnNames.scrollVelocityInScreenWidthsPerSecondColumnName} '
         '$_columnTypeReal,'
         '${_DatabaseColumnNames.flapVelocityInScreenHeightFractionPerSecondColumnName} '
@@ -162,7 +155,8 @@ class SurfaceEmgGameDatabase extends ChangeNotifier {
     var tableRows = _database.query(_userDataDatabaseName, columns: [
       _DatabaseColumnNames.idColumnName,
       _DatabaseColumnNames.highScoreColumnName,
-      _DatabaseColumnNames.mostRecentActivityTimestampColumnName
+      _DatabaseColumnNames.mostRecentActivityTimestampColumnName,
+      _DatabaseColumnNames.deviceNameColumnName
     ]);
 
     return tableRows.then((List<Map<String, dynamic>> tableData) {
@@ -170,7 +164,8 @@ class SurfaceEmgGameDatabase extends ChangeNotifier {
         return User(
             row[_DatabaseColumnNames.idColumnName],
             row[_DatabaseColumnNames.highScoreColumnName],
-            row[_DatabaseColumnNames.mostRecentActivityTimestampColumnName]);
+            row[_DatabaseColumnNames.mostRecentActivityTimestampColumnName],
+            row[_DatabaseColumnNames.deviceNameColumnName]);
       }));
     });
   }
@@ -182,7 +177,8 @@ class SurfaceEmgGameDatabase extends ChangeNotifier {
         await _database.query(_userDataDatabaseName,
             columns: [
               _DatabaseColumnNames.highScoreColumnName,
-              _DatabaseColumnNames.mostRecentActivityTimestampColumnName
+              _DatabaseColumnNames.mostRecentActivityTimestampColumnName,
+              _DatabaseColumnNames.deviceNameColumnName
             ],
             where: '${_DatabaseColumnNames.idColumnName} = ?',
             whereArgs: [id],
@@ -190,8 +186,17 @@ class SurfaceEmgGameDatabase extends ChangeNotifier {
 
     Map<String, dynamic> userData = userQueryData.first;
 
-    return User(id, userData[_DatabaseColumnNames.highScoreColumnName],
-        userData[_DatabaseColumnNames.mostRecentActivityTimestampColumnName]);
+    return User(
+        id,
+        userData[_DatabaseColumnNames.highScoreColumnName],
+        userData[_DatabaseColumnNames.mostRecentActivityTimestampColumnName],
+        userData[_DatabaseColumnNames.deviceNameColumnName]);
+  }
+
+  Future<void> updateDeviceNameForUser(String id, String deviceName) {
+    return _database.update(_userDataDatabaseName,
+        {_DatabaseColumnNames.deviceNameColumnName: deviceName},
+        where: '${_DatabaseColumnNames.idColumnName} = ?', whereArgs: [id]);
   }
 
   void updateHighScoreIfBetter(String id, int score) async {
@@ -317,6 +322,7 @@ class _DatabaseColumnNames {
   static const String timestampMillisecondsSinceEpochColumnName =
       'timestampMillisecondsSinceEpoch';
   static const String calibrationValueColumnName = 'calibrationValue';
+  static const String deviceNameColumnName = 'deviceName';
 
   static const String gameStartTimestampColumnName = 'gameStartTimestamp';
   static const String gameEndTimestampColumnName = 'gameEndTimestamp';

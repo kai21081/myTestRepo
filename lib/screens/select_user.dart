@@ -2,6 +2,7 @@ import 'dart:collection';
 
 import 'package:flutter/material.dart';
 import 'package:gameplayground/models/session_data.dart';
+import 'package:gameplayground/screens/select_bluetooth_device.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:gameplayground/models/user.dart';
@@ -50,8 +51,13 @@ class _SelectUserPageState extends State<SelectUserPage> {
     );
   }
 
-  CustomScrollView _buildBodyCustomScrollView(
-      UnmodifiableListView<User> userData) {
+  Widget _buildBodyCustomScrollView(UnmodifiableListView<User> userData) {
+    if (userData.isEmpty) {
+      return Center(
+          child:
+              Text('Add a new user to begin.', style: TextStyle(fontSize: 18)));
+    }
+
     return CustomScrollView(
       slivers: [
         Consumer<SessionDataModel>(builder: (context, sessionDataModel, child) {
@@ -116,7 +122,7 @@ class _NewUserFormState extends State<_NewUserForm> {
                     icon: const Icon(Icons.person),
                     labelText: "User ID *'"),
                 onSaved: (value) {
-                   Provider.of<SessionDataModel>(context, listen: false)
+                  Provider.of<SessionDataModel>(context, listen: false)
                       .createUser(value);
                 }),
             SizedBox(height: 24),
@@ -157,52 +163,8 @@ class _UserListItem extends StatelessWidget {
               dense: false,
               isThreeLine: true,
               leading: Icon(Icons.android, size: 36),
-              onTap: () {
-                Provider.of<SessionDataModel>(context, listen: false)
-                    .setUser(_user.id);
-                Navigator.push(context,
-                    MaterialPageRoute(builder: (context) => MainMenuPage()));
-              },
-              onLongPress: () {
-                showDialog<String>(
-                    context: context,
-                    builder: (context) {
-                      return AlertDialog(
-                          title: Text('Delete user ${_user.id}?'),
-                          content: Form(
-                              key: _deleteFormKey,
-                              child: TextFormField(
-                                textCapitalization: TextCapitalization.words,
-                                cursorColor: Theme.of(context).cursorColor,
-                                validator: (value) {
-                                  return value != '12345'
-                                      ? 'Incorrect Password'
-                                      : null;
-                                },
-                                decoration: InputDecoration(
-                                    filled: true,
-                                    icon: const Icon(Icons.lock),
-                                    labelText: 'Admin Password'),
-                              )),
-                          actions: <Widget>[
-                            FlatButton(
-                                child: Text('Delete'),
-                                onPressed: () {
-                                  if (_deleteFormKey.currentState.validate()) {
-                                    Provider.of<SessionDataModel>(context,
-                                            listen: false)
-                                        .deleteUser(_user.id);
-                                    Navigator.of(context).pop();
-                                  }
-                                }),
-                            FlatButton(
-                                child: Text('Cancel'),
-                                onPressed: () {
-                                  Navigator.of(context).pop();
-                                })
-                          ]);
-                    });
-              },
+              onTap: () => _onTap(context),
+              onLongPress: () => _onLongPress(context),
               title: Text(
                 _user.id,
                 style: TextStyle(
@@ -211,5 +173,56 @@ class _UserListItem extends StatelessWidget {
               subtitle: Text('High Score: ${_user.highScore}\n'
                   'Last Activity: $formattedMostRecentActivityDateTime'),
             )));
+  }
+
+  void _onLongPress(BuildContext context) {
+    showDialog<String>(
+        context: context,
+        builder: (context) {
+          return AlertDialog(
+              title: Text('Delete user ${_user.id}?'),
+              content: Form(
+                  key: _deleteFormKey,
+                  child: TextFormField(
+                    textCapitalization: TextCapitalization.words,
+                    cursorColor: Theme.of(context).cursorColor,
+                    validator: (value) {
+                      return value != '12345' ? 'Incorrect Password' : null;
+                    },
+                    decoration: InputDecoration(
+                        filled: true,
+                        icon: const Icon(Icons.lock),
+                        labelText: 'Admin Password'),
+                  )),
+              actions: <Widget>[
+                FlatButton(
+                    child: Text('Delete'),
+                    onPressed: () {
+                      if (_deleteFormKey.currentState.validate()) {
+                        Provider.of<SessionDataModel>(context, listen: false)
+                            .deleteUser(_user.id);
+                        Navigator.of(context).pop();
+                      }
+                    }),
+                FlatButton(
+                    child: Text('Cancel'),
+                    onPressed: () {
+                      Navigator.of(context).pop();
+                    })
+              ]);
+        });
+  }
+
+  void _onTap(BuildContext context) async {
+    await Provider.of<SessionDataModel>(context, listen: false)
+        .setUser(_user.id);
+    print('_onTap user: $_user');
+    if (_user.deviceName != null) {
+      Navigator.push(
+          context, MaterialPageRoute(builder: (context) => MainMenuPage()));
+    } else {
+      Navigator.push(context,
+          MaterialPageRoute(builder: (context) => SelectBluetoothDevicePage()));
+    }
   }
 }

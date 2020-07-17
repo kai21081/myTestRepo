@@ -94,9 +94,9 @@ class FlappyGame extends Game with HasWidgetsOverlay {
 
     _isGameOver = false;
 
-    _dataProcessor.startProcessing(() {
+    _dataProcessor.startProcessing((_) {
       _birdController.onTapDown();
-    }, true);
+    }, logData: true);
   }
 
   void _createSkyBackgroundController() {

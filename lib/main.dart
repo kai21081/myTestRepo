@@ -2,6 +2,7 @@ import 'package:flame/util.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:gameplayground/models/asset_loading_utils.dart';
+import 'package:gameplayground/models/bluetooth_manager.dart';
 import 'package:gameplayground/models/session_data.dart';
 import 'package:gameplayground/models/surface_emg_game_database.dart';
 import 'package:gameplayground/screens/select_user.dart';
@@ -15,10 +16,13 @@ void main() async {
 
   loadAssets();
 
+  BluetoothManager bluetoothManager = BluetoothManager();
+//  bluetoothManager.initialize();
+
   SurfaceEmgGameDatabase database = SurfaceEmgGameDatabase();
   await database.initialize();
 
-  runApp(MyApp(SessionDataModel(database)));
+  runApp(MyApp(SessionDataModel(database, bluetoothManager)));
 }
 
 class MyApp extends StatelessWidget {

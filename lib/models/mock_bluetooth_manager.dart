@@ -2,6 +2,8 @@ import 'dart:async';
 import 'dart:core';
 import 'dart:math';
 
+import 'emg_sample.dart';
+
 class MockBluetoothManager {
   final int _timestepMicroseconds;
   final int _periodBetweenSpikesMicroseconds;
@@ -65,11 +67,4 @@ class MockBluetoothManager {
     _initializeStream();
     return _controller.stream;
   }
-}
-
-class EmgSample {
-  final int timestamp;
-  final int value;
-
-  EmgSample(this.timestamp, this.value);
 }

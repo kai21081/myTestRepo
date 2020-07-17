@@ -1,8 +1,8 @@
 import 'package:flame/util.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:gameplayground/models/bluetooth_manager.dart';
 import 'package:gameplayground/screens/flappy_game.dart';
-import 'package:gameplayground/models/mock_bluetooth_manager.dart';
 import 'package:gameplayground/models/session_data.dart';
 import 'package:gameplayground/models/thresholded_trigger_data_processor.dart';
 import 'package:gameplayground/screens/game_settings.dart';
@@ -35,88 +35,189 @@ class _MainMenuPageState extends State<MainMenuPage> {
 
   static final double _betweenButtonSpacing = 20;
 
+  static final String _callbackNameNotifyChangedState =
+      '_MainMenuPageState_Callback';
+
+  BluetoothManager _bluetoothManager;
+  BluetoothManagerState _bluetoothManagerState;
+  String _deviceName;
+
+  @override
+  void initState() {
+    super.initState();
+    _bluetoothManager =
+        Provider.of<SessionDataModel>(context, listen: false).bluetoothManager;
+    _deviceName = Provider.of<SessionDataModel>(context, listen: false)
+        .currentUserDeviceName;
+    _bluetoothManager.setDeviceName(_deviceName);
+    _bluetoothManagerState = _bluetoothManager.currentState;
+    _bluetoothManager.addNotifyChangedStateCallback(
+        _callbackNameNotifyChangedState, _handleBluetoothManagerState);
+    print('calling initialize');
+    _bluetoothManager.initialize();
+  }
+
+  void _handleBluetoothManagerState(BluetoothManagerState state) {
+    print('received new state of: $_bluetoothManagerState');
+    setState(() {
+      _bluetoothManagerState = state;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     String currentUserId =
         Provider.of<SessionDataModel>(context, listen: false).currentUserId;
+
+    String connectionMessage;
+    Widget connectionWidget;
+    if (_bluetoothManagerState == BluetoothManagerState.connected) {
+      connectionMessage = 'Connected to Surface EMG.';
+      connectionWidget = Icon(Icons.bluetooth_connected);
+    } else {
+      connectionMessage = 'Connecting to Surface EMG.';
+      connectionWidget = CircularProgressIndicator();
+    }
+
+    List<Widget> bodyColumnChildren = <Widget>[
+      SizedBox(height: 40),
+      _buildPlayGameButton(),
+      SizedBox(height: _betweenButtonSpacing),
+      _buildPracticeModeButton(),
+      SizedBox(height: _betweenButtonSpacing),
+      _buildGameSettingsButton(),
+      SizedBox(height: _betweenButtonSpacing),
+      _buildCalibrateButton(),
+      SizedBox(height: _betweenButtonSpacing),
+      _buildDisplayInputButton(),
+      Expanded(
+        child: Container(),
+      ),
+      SizedBox(
+        height: 40,
+        child:
+            Row(mainAxisAlignment: MainAxisAlignment.center, children: <Widget>[
+          SizedBox(width: 20),
+          SizedBox(height: 30, width: 30, child: connectionWidget),
+          SizedBox(width: 20),
+          Text(connectionMessage, style: TextStyle(fontSize: 18))
+        ]),
+      )
+    ];
+
     return Scaffold(
       appBar: AppBar(
         title: Text('Welcome, $currentUserId!'),
         centerTitle: true,
+        leading: BackButton(onPressed: () async {
+          _bluetoothManager
+              .removeNotifyChangedStateCallback(_callbackNameNotifyChangedState);
+          await _bluetoothManager.reset();
+          Navigator.of(context).pop();
+        }),
       ),
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            FloatingActionButton.extended(
-              label: Text(_labelPlayGameButton),
-              heroTag: _heroTagPlayGameButton,
-              onPressed: () {
-                Navigator.push(context, MaterialPageRoute(builder: (context) {
-                  FlappyGame game = FlappyGame(
-                      context,
-                      ThresholdedTriggerDataProcessor(
-                          MockBluetoothManager(100, 2, 10, 5, 50)),
-                      practiceMode: false);
-                  TapGestureRecognizer tapper = TapGestureRecognizer();
-                  tapper.onTapDown = game.onTapDown;
-                  Util().addGestureRecognizer(tapper);
-                  return game.widget;
-                }));
-              },
-            ),
-            SizedBox(height: _betweenButtonSpacing),
-            FloatingActionButton.extended(
-              label: Text(_labelPracticeModeButton),
-              heroTag: _heroTagPracticeModeButton,
-              onPressed: () {
-                Navigator.push(context, MaterialPageRoute(builder: (context) {
-                  FlappyGame game = FlappyGame(
-                      context,
-                      ThresholdedTriggerDataProcessor(
-                          MockBluetoothManager(100, 10, 10, 5, 50)),
-                      practiceMode: true);
-                  TapGestureRecognizer tapper = TapGestureRecognizer();
-                  tapper.onTapDown = game.onTapDown;
-                  Util().addGestureRecognizer(tapper);
-                  return game.widget;
-                }));
-              },
-            ),
-            SizedBox(height: _betweenButtonSpacing),
-            FloatingActionButton.extended(
-              label: Text(_labelGameSettingsButton),
-              heroTag: _heroTagGameSettingsButton,
-              onPressed: () {
-                Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                        builder: (context) => GameSettingsPage()));
-              },
-            ),
-            SizedBox(height: _betweenButtonSpacing),
-            FloatingActionButton.extended(
-              label: Text(_labelCalibrateButton),
-              heroTag: _heroTagCalibrateButton,
-              onPressed: () {
-                Navigator.push(context,
-                    MaterialPageRoute(builder: (context) => CalibrationPage()));
-              },
-            ),
-            SizedBox(height: _betweenButtonSpacing),
-            FloatingActionButton.extended(
-              label: Text(_labelDisplayInputButton),
-              heroTag: _heroTagDisplayInputButton,
-              onPressed: () {
-                Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                        builder: (context) => InputTimeseriesPage()));
-              },
-            )
-          ],
+          children: bodyColumnChildren,
         ),
       ),
+    );
+  }
+
+  FloatingActionButton _buildPlayGameButton() {
+    return _buildFloatingActionButtonBasedOnState(
+      labelString: _labelPlayGameButton,
+      heroTag: _heroTagPlayGameButton,
+      onPressed: () {
+        Navigator.push(context, MaterialPageRoute(builder: (context) {
+          FlappyGame game = FlappyGame(
+              context, ThresholdedTriggerDataProcessor(_bluetoothManager),
+              practiceMode: false);
+          TapGestureRecognizer tapper = TapGestureRecognizer();
+          tapper.onTapDown = game.onTapDown;
+          Util().addGestureRecognizer(tapper);
+          return game.widget;
+        }));
+      },
+    );
+  }
+
+  FloatingActionButton _buildPracticeModeButton() {
+    return _buildFloatingActionButtonBasedOnState(
+      labelString: _labelPracticeModeButton,
+      heroTag: _heroTagPracticeModeButton,
+      onPressed: () {
+        Navigator.push(context, MaterialPageRoute(builder: (context) {
+          FlappyGame game = FlappyGame(
+              context, ThresholdedTriggerDataProcessor(_bluetoothManager),
+              practiceMode: true);
+          TapGestureRecognizer tapper = TapGestureRecognizer();
+          tapper.onTapDown = game.onTapDown;
+          Util().addGestureRecognizer(tapper);
+          return game.widget;
+        }));
+      },
+    );
+  }
+
+  FloatingActionButton _buildGameSettingsButton() {
+    return _buildFloatingActionButtonBasedOnState(
+      labelString: _labelGameSettingsButton,
+      heroTag: _heroTagGameSettingsButton,
+      onPressed: () {
+        Navigator.push(context,
+            MaterialPageRoute(builder: (context) => GameSettingsPage()));
+      },
+    );
+  }
+
+  FloatingActionButton _buildCalibrateButton() {
+    return _buildFloatingActionButtonBasedOnState(
+      labelString: _labelCalibrateButton,
+      heroTag: _heroTagCalibrateButton,
+      onPressed: () {
+        Navigator.push(context,
+            MaterialPageRoute(builder: (context) => CalibrationPage()));
+      },
+    );
+  }
+
+  FloatingActionButton _buildDisplayInputButton() {
+    return _buildFloatingActionButtonBasedOnState(
+      labelString: _labelDisplayInputButton,
+      heroTag: _heroTagDisplayInputButton,
+      onPressed: () {
+        Navigator.push(context,
+            MaterialPageRoute(builder: (context) => InputTimeseriesPage()));
+      },
+    );
+  }
+
+  FloatingActionButton _buildFloatingActionButtonBasedOnState(
+      {@required String labelString,
+      @required String heroTag,
+      @required VoidCallback onPressed}) {
+    print('building button: $labelString with state: $_bluetoothManagerState.');
+    VoidCallback onPressedForState;
+    final theme = Theme.of(context);
+    Color backgroundColor;
+    if (_bluetoothManagerState == BluetoothManagerState.connected) {
+      onPressedForState = onPressed;
+      backgroundColor = theme.colorScheme.primary;
+      print('buttonColor: $backgroundColor');
+    } else {
+      onPressedForState = null;
+      backgroundColor = Colors.grey[300];
+      print('disabledColor: $backgroundColor');
+    }
+
+    return FloatingActionButton.extended(
+      label: Text(labelString),
+      heroTag: heroTag,
+      onPressed: onPressedForState,
+      disabledElevation: 0.0,
+      backgroundColor: backgroundColor,
     );
   }
 }

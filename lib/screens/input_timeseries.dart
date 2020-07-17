@@ -4,7 +4,11 @@ import 'dart:math';
 
 import 'package:charts_flutter/flutter.dart' as charts;
 import 'package:flutter/material.dart';
-import 'package:gameplayground/models/mock_bluetooth_manager.dart';
+import 'package:gameplayground/models/bluetooth_manager.dart';
+import 'package:gameplayground/models/emg_sample.dart';
+import 'package:gameplayground/models/session_data.dart';
+import 'package:gameplayground/models/thresholded_trigger_data_processor.dart';
+import 'package:provider/provider.dart';
 
 class InputTimeseriesPage extends StatefulWidget {
   final String title;
@@ -16,26 +20,37 @@ class InputTimeseriesPage extends StatefulWidget {
 }
 
 class _InputTimeseriesPageState extends State<InputTimeseriesPage> {
+  static const int rangeMaxValue = 20000;
+  static const int rangeMinValue = 0;
   TimeseriesWindowForPlot _timeseriesWindow = TimeseriesWindowForPlot(100);
-  MockBluetoothManager _bluetoothManager =
-      MockBluetoothManager(1000, 20, 10, 5, 50);
+  BluetoothManager _bluetoothManager;
+  ThresholdedTriggerDataProcessor _dataProcessor;
   StreamSubscription<EmgSample> _streamSubscription;
 
   @override
   void initState() {
     super.initState();
-    _streamSubscription = _bluetoothManager.getRawDataStream().listen((data) {
+    _bluetoothManager =
+        Provider.of<SessionDataModel>(context, listen: false).bluetoothManager;
+    _bluetoothManager.addHandleValueCallback('InputTimeseriesPage',
+        (EmgSample sample) {
       setState(() {
-        _timeseriesWindow.addValue(data);
+        _timeseriesWindow.addValue(sample);
       });
     });
+
+    _dataProcessor = ThresholdedTriggerDataProcessor(_bluetoothManager);
+    _dataProcessor.startProcessing(
+        (ProcessedDataPoint data) =>
+            _timeseriesWindow.addTriggerTimestamp(data.timestamp),
+        logData: false);
   }
 
   @override
-  void dispose() {
-    super.dispose();
-    _streamSubscription.cancel();
-    _bluetoothManager.closeStream();
+  void deactivate() {
+    super.deactivate();
+    _dataProcessor.stopProcessing();
+    _bluetoothManager.removeHandleValueCallback('InputTimeseriesPage');
   }
 
   @override
@@ -52,20 +67,23 @@ class _InputTimeseriesPageState extends State<InputTimeseriesPage> {
                 height: 250,
                 width: 250,
                 child: charts.LineChart(
-                  <charts.Series<EmgSample, int>>[
-                    charts.Series<EmgSample, int>(
-                        id: 'fake_data',
-                        colorFn: (_, __) =>
-                            charts.MaterialPalette.blue.shadeDefault,
-                        domainFn: (EmgSample pair, _) => pair.timestamp,
-                        measureFn: (EmgSample pair, _) => pair.value,
-                        data: _timeseriesWindow.dataToPlot)
-                  ],
-                  animate: false,
-                  domainAxis: charts.NumericAxisSpec(
-                      tickProviderSpec:
-                          charts.NumericEndPointsTickProviderSpec()),
-                )),
+                    <charts.Series<EmgSample, int>>[
+                      charts.Series<EmgSample, int>(
+                          id: 'fake_data',
+                          colorFn: (_, __) =>
+                              charts.MaterialPalette.blue.shadeDefault,
+                          domainFn: (EmgSample pair, _) => pair.timestamp,
+                          measureFn: (EmgSample pair, _) => pair.value,
+                          data: _timeseriesWindow.dataToPlot)
+                    ]..addAll(_mapTriggerTimestampsToPlotToSeries(
+                        _timeseriesWindow.triggerTimestampsToPlot)),
+                    animate: false,
+                    domainAxis: charts.NumericAxisSpec(
+                        tickProviderSpec:
+                            charts.NumericEndPointsTickProviderSpec()),
+                    primaryMeasureAxis: charts.NumericAxisSpec(
+                        tickProviderSpec: charts.StaticNumericTickProviderSpec(
+                            [charts.TickSpec(0), charts.TickSpec(20000)])))),
           ],
         ),
       ),
@@ -73,15 +91,40 @@ class _InputTimeseriesPageState extends State<InputTimeseriesPage> {
   }
 }
 
+List<charts.Series<EmgSample, int>> _mapTriggerTimestampsToPlotToSeries(
+    UnmodifiableListView<EmgSample> triggerTimestamps) {
+  print('_mapTriggerTimestampsToPlotToSeries, length: ${triggerTimestamps.length}');
+  return List<charts.Series<EmgSample, int>>.of(
+      triggerTimestamps.map((EmgSample sample) {
+    List<EmgSample> mappedData = [
+      EmgSample(sample.timestamp, _InputTimeseriesPageState.rangeMinValue),
+      EmgSample(sample.timestamp, _InputTimeseriesPageState.rangeMaxValue)
+    ];
+    return charts.Series<EmgSample, int>(
+        id: 'trigger_at_${sample.timestamp}',
+        colorFn: (_, __) => charts.MaterialPalette.red.shadeDefault,
+        domainFn: (EmgSample point, _) => point.timestamp,
+        measureFn: (EmgSample point, _) => point.value,
+        data: mappedData);
+  }));
+}
+
 class TimeseriesWindowForPlot {
   final int _capacity;
   ListQueue<EmgSample> _data;
+  ListQueue<int> _triggerTimestamps;
 
   UnmodifiableListView<EmgSample> get dataToPlot =>
       UnmodifiableListView<EmgSample>(_data);
 
+  // Plot data must all be in EmgSample's, thus the timestamps are wrapped here.
+  UnmodifiableListView<EmgSample> get triggerTimestampsToPlot =>
+      UnmodifiableListView<EmgSample>(_triggerTimestamps
+          .map((int timestamp) => EmgSample(timestamp, null)));
+
   TimeseriesWindowForPlot(this._capacity) {
     _data = ListQueue<EmgSample>();
+    _triggerTimestamps = ListQueue<int>();
   }
 
   void addValue(EmgSample value) {
@@ -90,6 +133,18 @@ class TimeseriesWindowForPlot {
     if (_data.length > _capacity) {
       _data.removeFirst();
     }
+
+    // Remove any trigger that is before the first data point (because it is no
+    // longer needed for plotting).
+    while (_triggerTimestamps.isNotEmpty &&
+        (_triggerTimestamps.first < _data.first.timestamp)) {
+      _triggerTimestamps.removeFirst();
+    }
+  }
+
+  void addTriggerTimestamp(int timestamp) {
+    print('trigger added');
+    _triggerTimestamps.addLast(timestamp);
   }
 
   int get domainMin {
