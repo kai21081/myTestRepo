@@ -6,6 +6,7 @@ import 'package:gameplayground/screens/flappy_game.dart';
 import 'package:gameplayground/models/session_data.dart';
 import 'package:gameplayground/models/thresholded_trigger_data_processor.dart';
 import 'package:gameplayground/screens/game_settings.dart';
+import 'package:gameplayground/screens/gameplay_data.dart';
 import 'package:gameplayground/screens/input_timeseries.dart';
 import 'package:provider/provider.dart';
 
@@ -26,20 +27,22 @@ class _MainMenuPageState extends State<MainMenuPage> {
   static final String _labelGameSettingsButton = 'Game Settings';
   static final String _labelCalibrateButton = 'Calibrate';
   static final String _labelDisplayInputButton = 'Display Input';
+  static final String _labelGameplayDataButton = 'Gameplay Data';
 
   static final String _heroTagPlayGameButton = 'play_game_button';
   static final String _heroTagPracticeModeButton = 'practice_mode_button';
   static final String _heroTagGameSettingsButton = 'game_settings_button';
   static final String _heroTagCalibrateButton = 'calibrate_button';
   static final String _heroTagDisplayInputButton = 'display_input_button';
+  static final String _heroTagGameplayDataButton = 'gameplay_data';
 
   static final double _betweenButtonSpacing = 20;
 
-  static final String _callbackNameNotifyChangedState =
+  static final String _callbackNameNotifyIsReadyToProvideValuesState =
       '_MainMenuPageState_Callback';
 
   BluetoothManager _bluetoothManager;
-  BluetoothManagerState _bluetoothManagerState;
+  bool _bluetoothManagerIsReadyToProvideValues;
   String _deviceName;
 
   @override
@@ -49,18 +52,20 @@ class _MainMenuPageState extends State<MainMenuPage> {
         Provider.of<SessionDataModel>(context, listen: false).bluetoothManager;
     _deviceName = Provider.of<SessionDataModel>(context, listen: false)
         .currentUserDeviceName;
-    _bluetoothManager.setDeviceName(_deviceName);
-    _bluetoothManagerState = _bluetoothManager.currentState;
-    _bluetoothManager.addNotifyChangedStateCallback(
-        _callbackNameNotifyChangedState, _handleBluetoothManagerState);
-    print('calling initialize');
-    _bluetoothManager.initialize();
+
+    _bluetoothManagerIsReadyToProvideValues =
+        _bluetoothManager.isReadyToProvideValues;
+    _bluetoothManager.addNotifyIsReadyToProvideValuesStateCallback(
+        _callbackNameNotifyIsReadyToProvideValuesState,
+        _handleBluetoothManagerIsReadyToProvideValueState);
+    _bluetoothManager.connect(ConnectionSpec.fromDeviceName(_deviceName));
   }
 
-  void _handleBluetoothManagerState(BluetoothManagerState state) {
-    print('received new state of: $_bluetoothManagerState');
+  void _handleBluetoothManagerIsReadyToProvideValueState(
+      bool isReadyToProvideValues) {
+    print('received new isReadyToProvideValues of: $isReadyToProvideValues');
     setState(() {
-      _bluetoothManagerState = state;
+      _bluetoothManagerIsReadyToProvideValues = isReadyToProvideValues;
     });
   }
 
@@ -71,7 +76,7 @@ class _MainMenuPageState extends State<MainMenuPage> {
 
     String connectionMessage;
     Widget connectionWidget;
-    if (_bluetoothManagerState == BluetoothManagerState.connected) {
+    if (_bluetoothManagerIsReadyToProvideValues) {
       connectionMessage = 'Connected to Surface EMG.';
       connectionWidget = Icon(Icons.bluetooth_connected);
     } else {
@@ -90,6 +95,8 @@ class _MainMenuPageState extends State<MainMenuPage> {
       _buildCalibrateButton(),
       SizedBox(height: _betweenButtonSpacing),
       _buildDisplayInputButton(),
+      SizedBox(height: _betweenButtonSpacing),
+      _buildGameplayDataButton(),
       Expanded(
         child: Container(),
       ),
@@ -110,8 +117,8 @@ class _MainMenuPageState extends State<MainMenuPage> {
         title: Text('Welcome, $currentUserId!'),
         centerTitle: true,
         leading: BackButton(onPressed: () async {
-          _bluetoothManager
-              .removeNotifyChangedStateCallback(_callbackNameNotifyChangedState);
+          _bluetoothManager.removeNotifyIsReadyToProvideValuesStateCallback(
+              _callbackNameNotifyIsReadyToProvideValuesState);
           await _bluetoothManager.reset();
           Navigator.of(context).pop();
         }),
@@ -194,15 +201,27 @@ class _MainMenuPageState extends State<MainMenuPage> {
     );
   }
 
+  FloatingActionButton _buildGameplayDataButton() {
+    return _buildFloatingActionButtonBasedOnState(
+      labelString: _labelGameplayDataButton,
+      heroTag: _heroTagGameplayDataButton,
+      onPressed: () {
+        Navigator.push(context,
+            MaterialPageRoute(builder: (context) => GameplayDataPage()));
+      },
+    );
+  }
+
   FloatingActionButton _buildFloatingActionButtonBasedOnState(
       {@required String labelString,
       @required String heroTag,
       @required VoidCallback onPressed}) {
-    print('building button: $labelString with state: $_bluetoothManagerState.');
+    print(
+        'building button: $labelString with state: $_bluetoothManagerIsReadyToProvideValues.');
     VoidCallback onPressedForState;
     final theme = Theme.of(context);
     Color backgroundColor;
-    if (_bluetoothManagerState == BluetoothManagerState.connected) {
+    if (_bluetoothManagerIsReadyToProvideValues) {
       onPressedForState = onPressed;
       backgroundColor = theme.colorScheme.primary;
       print('buttonColor: $backgroundColor');

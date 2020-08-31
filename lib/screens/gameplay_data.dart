@@ -11,16 +11,16 @@ import 'package:flutter/material.dart';
 // - gameplay time over time
 // - game duration over time
 
-class UserDataPage extends StatefulWidget {
+class GameplayDataPage extends StatefulWidget {
   final String title;
 
-  UserDataPage({Key key, this.title}) : super(key: key);
+  GameplayDataPage({Key key, this.title}) : super(key: key);
 
   @override
-  _UserDataPageState createState() => _UserDataPageState();
+  _GameplayDataPageState createState() => _GameplayDataPageState();
 }
 
-class _UserDataPageState extends State<UserDataPage> {
+class _GameplayDataPageState extends State<GameplayDataPage> {
 
   @override
   void initState() {
@@ -34,6 +34,8 @@ class _UserDataPageState extends State<UserDataPage> {
 
   @override
   Widget build(BuildContext context) {
+
+
     return Scaffold(
       appBar: AppBar(
         title: Text("User Data"),
@@ -46,5 +48,6 @@ class _UserDataPageState extends State<UserDataPage> {
       ),
     );
   }
+
 }
 

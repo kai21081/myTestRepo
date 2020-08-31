@@ -29,7 +29,7 @@ class ThresholdedTriggerDataProcessor {
       {bool logData: false}) {
     _onTriggerCallback = onTriggerCallback;
     _logData = logData;
-    _bluetoothManager.addHandleValueCallback(
+    _bluetoothManager.addHandleSEmgValueCallback(
         bluetoothManagerCallbackName, _handleNewEmgSample);
   }
 
@@ -69,7 +69,8 @@ class ThresholdedTriggerDataProcessor {
   }
 
   void stopProcessing() {
-    _bluetoothManager.removeHandleValueCallback(bluetoothManagerCallbackName);
+    _bluetoothManager
+        .removeHandleSEmgValueCallback(bluetoothManagerCallbackName);
     _onTriggerCallback = null;
     _logData = null;
   }

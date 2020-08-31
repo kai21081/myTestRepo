@@ -11,22 +11,21 @@ import 'models/bluetooth_manager.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   BluetoothManager bluetoothManager = BluetoothManager();
-  bluetoothManager.initialize();
 
-  bluetoothManager.addHandleValueCallback(
+  bluetoothManager.addHandleSEmgValueCallback(
       'test_0', (value) => print('test_0: $value'));
-  bluetoothManager.addHandleValueCallback(
+  bluetoothManager.addHandleSEmgValueCallback(
       'test_1', (value) => print('test_1: $value'));
 
-  bluetoothManager.addNotifyChangedStateCallback(
+  bluetoothManager.addNotifyIsReadyToProvideValuesStateCallback(
       'notify',
-          (BluetoothManagerState state) =>
+          (bool state) =>
           print('notify callback called with state: $state'));
 
   Timer(Duration(seconds: 30), () {
-    bluetoothManager.removeHandleValueCallback('test_0');
+    bluetoothManager.removeHandleSEmgValueCallback('test_0');
     Timer(Duration(seconds: 30), () {
-      bluetoothManager.removeHandleValueCallback('test_1');
+      bluetoothManager.removeHandleSEmgValueCallback('test_1');
     });
   });
 

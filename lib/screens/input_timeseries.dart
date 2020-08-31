@@ -32,7 +32,7 @@ class _InputTimeseriesPageState extends State<InputTimeseriesPage> {
     super.initState();
     _bluetoothManager =
         Provider.of<SessionDataModel>(context, listen: false).bluetoothManager;
-    _bluetoothManager.addHandleValueCallback('InputTimeseriesPage',
+    _bluetoothManager.addHandleSEmgValueCallback('InputTimeseriesPage',
         (EmgSample sample) {
       setState(() {
         _timeseriesWindow.addValue(sample);
@@ -50,7 +50,7 @@ class _InputTimeseriesPageState extends State<InputTimeseriesPage> {
   void deactivate() {
     super.deactivate();
     _dataProcessor.stopProcessing();
-    _bluetoothManager.removeHandleValueCallback('InputTimeseriesPage');
+    _bluetoothManager.removeHandleSEmgValueCallback('InputTimeseriesPage');
   }
 
   @override

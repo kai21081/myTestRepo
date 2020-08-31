@@ -106,7 +106,6 @@ class _SelectBluetoothDevicePageState extends State<SelectBluetoothDevicePage> {
       label: Text(_labelScanAgain),
       onPressed: () {
         setState(() {
-          _bluetoothManager.stopScan();
           _scanResults = _bluetoothManager.scanForAvailableSurfaceEmgDevices();
         });
       },
