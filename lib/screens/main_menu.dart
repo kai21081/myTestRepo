@@ -36,6 +36,11 @@ class _MainMenuPageState extends State<MainMenuPage> {
   static final String _heroTagDisplayInputButton = 'display_input_button';
   static final String _heroTagGameplayDataButton = 'gameplay_data';
 
+  static final String _connectingToSurfaceEmgMessage =
+      'Connecting to Surface EMG.';
+  static final String _connectedToSurfaceEmgMessage =
+      'Connected to Surface EMG.';
+
   static final double _betweenButtonSpacing = 20;
 
   static final String _callbackNameNotifyIsReadyToProvideValuesState =
@@ -63,7 +68,6 @@ class _MainMenuPageState extends State<MainMenuPage> {
 
   void _handleBluetoothManagerIsReadyToProvideValueState(
       bool isReadyToProvideValues) {
-    print('received new isReadyToProvideValues of: $isReadyToProvideValues');
     setState(() {
       _bluetoothManagerIsReadyToProvideValues = isReadyToProvideValues;
     });
@@ -77,10 +81,10 @@ class _MainMenuPageState extends State<MainMenuPage> {
     String connectionMessage;
     Widget connectionWidget;
     if (_bluetoothManagerIsReadyToProvideValues) {
-      connectionMessage = 'Connected to Surface EMG.';
+      connectionMessage = _connectedToSurfaceEmgMessage;
       connectionWidget = Icon(Icons.bluetooth_connected);
     } else {
-      connectionMessage = 'Connecting to Surface EMG.';
+      connectionMessage = _connectingToSurfaceEmgMessage;
       connectionWidget = CircularProgressIndicator();
     }
 
@@ -119,7 +123,7 @@ class _MainMenuPageState extends State<MainMenuPage> {
         leading: BackButton(onPressed: () async {
           _bluetoothManager.removeNotifyIsReadyToProvideValuesStateCallback(
               _callbackNameNotifyIsReadyToProvideValuesState);
-          await _bluetoothManager.reset();
+          _bluetoothManager.reset();
           Navigator.of(context).pop();
         }),
       ),
@@ -133,37 +137,35 @@ class _MainMenuPageState extends State<MainMenuPage> {
   }
 
   FloatingActionButton _buildPlayGameButton() {
-    return _buildFloatingActionButtonBasedOnState(
-      labelString: _labelPlayGameButton,
-      heroTag: _heroTagPlayGameButton,
-      onPressed: () {
-        Navigator.push(context, MaterialPageRoute(builder: (context) {
-          FlappyGame game = FlappyGame(
-              context, ThresholdedTriggerDataProcessor(_bluetoothManager),
-              practiceMode: false);
-          TapGestureRecognizer tapper = TapGestureRecognizer();
-          tapper.onTapDown = game.onTapDown;
-          Util().addGestureRecognizer(tapper);
-          return game.widget;
-        }));
-      },
-    );
+    return _buildGameStartingButton(_labelPlayGameButton,
+        _heroTagPlayGameButton, /*startPracticeMode=*/ false);
   }
 
   FloatingActionButton _buildPracticeModeButton() {
+    return _buildGameStartingButton(_labelPracticeModeButton,
+        _heroTagPracticeModeButton, /*startPracticeMode=*/ true);
+  }
+
+  FloatingActionButton _buildGameStartingButton(
+      String label, String heroTag, bool startPracticeMode) {
     return _buildFloatingActionButtonBasedOnState(
-      labelString: _labelPracticeModeButton,
-      heroTag: _heroTagPracticeModeButton,
-      onPressed: () {
-        Navigator.push(context, MaterialPageRoute(builder: (context) {
+      labelString: label,
+      heroTag: heroTag,
+      onPressed: () async {
+        await _bluetoothManager.startStreamingValues();
+        MaterialPageRoute route = MaterialPageRoute(builder: (context) {
           FlappyGame game = FlappyGame(
               context, ThresholdedTriggerDataProcessor(_bluetoothManager),
-              practiceMode: true);
+              practiceMode: startPracticeMode);
           TapGestureRecognizer tapper = TapGestureRecognizer();
           tapper.onTapDown = game.onTapDown;
           Util().addGestureRecognizer(tapper);
           return game.widget;
-        }));
+        });
+        route.popped.then((_) {
+          _bluetoothManager.stopStreamingValues();
+        });
+        Navigator.push(context, route);
       },
     );
   }
@@ -194,9 +196,15 @@ class _MainMenuPageState extends State<MainMenuPage> {
     return _buildFloatingActionButtonBasedOnState(
       labelString: _labelDisplayInputButton,
       heroTag: _heroTagDisplayInputButton,
-      onPressed: () {
-        Navigator.push(context,
-            MaterialPageRoute(builder: (context) => InputTimeseriesPage()));
+      onPressed: () async {
+        print('Display Input button pushed.');
+        await _bluetoothManager.startStreamingValues();
+        MaterialPageRoute route =
+            MaterialPageRoute(builder: (context) => InputTimeseriesPage());
+        route.popped.then((_) {
+          _bluetoothManager.stopStreamingValues();
+        });
+        Navigator.push(context, route);
       },
     );
   }
@@ -216,8 +224,8 @@ class _MainMenuPageState extends State<MainMenuPage> {
       {@required String labelString,
       @required String heroTag,
       @required VoidCallback onPressed}) {
-    print(
-        'building button: $labelString with state: $_bluetoothManagerIsReadyToProvideValues.');
+//    print(
+//        'building button: $labelString with state: $_bluetoothManagerIsReadyToProvideValues.');
     VoidCallback onPressedForState;
     final theme = Theme.of(context);
     Color backgroundColor;
@@ -228,7 +236,7 @@ class _MainMenuPageState extends State<MainMenuPage> {
     } else {
       onPressedForState = null;
       backgroundColor = Colors.grey[300];
-      print('disabledColor: $backgroundColor');
+//      print('disabledColor: $backgroundColor');
     }
 
     return FloatingActionButton.extended(

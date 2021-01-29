@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:gameplayground/models/asset_loading_utils.dart';
 import 'package:gameplayground/models/debug_bluetooth_manager.dart';
 import 'package:gameplayground/models/bluetooth_manager.dart';
+import 'package:gameplayground/models/game_record_saving_utils.dart';
 import 'package:gameplayground/models/session_data.dart';
 import 'package:gameplayground/models/surface_emg_game_database.dart';
 import 'package:gameplayground/screens/select_user.dart';
@@ -14,7 +15,6 @@ void main() async {
   Util flameUtil = Util();
   flameUtil.fullScreen();
   flameUtil.setOrientation(DeviceOrientation.portraitUp);
-
   loadAssets();
 
 //  BluetoothManager bluetoothManager = BluetoothManager();
@@ -22,6 +22,8 @@ void main() async {
 
   SurfaceEmgGameDatabase database = SurfaceEmgGameDatabase();
   await database.initialize();
+
+  await createRecordingsDirectory();
 
   runApp(MyApp(SessionDataModel(database, bluetoothManager)));
 }
