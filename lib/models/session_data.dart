@@ -2,6 +2,8 @@ import 'dart:collection';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:gameplayground/models/bluetooth_manager.dart';
+import 'package:gameplayground/models/emg_recording.dart';
+import 'package:gameplayground/models/emg_sample.dart';
 import 'package:gameplayground/models/game_record_saving_utils.dart';
 import 'package:gameplayground/models/game_settings.dart';
 
@@ -96,7 +98,7 @@ class SessionDataModel extends ChangeNotifier {
   Future<void> handleGameplayData(
       GameplayData gameplayData,
       GameSettings gameSettings,
-      UnmodifiableListView<ProcessedDataPoint> emgData) async {
+      EmgRecording emgRecording) async {
     Future<void> databaseWriteAndUserUpdateFuture = _database
         .insertDataFromSingleGame(gameplayData.startTime, gameplayData.endTime,
             _currentUser.id, gameplayData.score)
@@ -110,7 +112,7 @@ class SessionDataModel extends ChangeNotifier {
           _makeTimestampIdFilename(gameplayData.startTime, _currentUser.id) +
               _jsonExtension);
       saveGameRecord(
-          _currentUser.id, gameSettings, emgData, gameplayData, savePath);
+          _currentUser.id, gameSettings, emgRecording, gameplayData, savePath);
     });
 
     return databaseWriteAndUserUpdateFuture;

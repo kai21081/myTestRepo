@@ -11,6 +11,7 @@ import 'package:gameplayground/components/column_obstacle_controller.dart';
 import 'package:gameplayground/components/repeating_background_controller.dart';
 import 'package:gameplayground/components/target_controller.dart';
 import 'package:gameplayground/models/asset_loading_utils.dart';
+import 'package:gameplayground/models/emg_recording.dart';
 import 'package:gameplayground/models/gameplay_data.dart';
 import 'package:gameplayground/models/session_data.dart';
 import 'package:gameplayground/models/thresholded_trigger_data_processor.dart';
@@ -228,12 +229,11 @@ class FlappyGame extends Game with HasWidgetsOverlay {
     int gameEndMillisecondsSinceEpoch = DateTime.now().millisecondsSinceEpoch;
     _isGameOver = true;
 
-    UnmodifiableListView<ProcessedDataPoint> gameEmgData =
-        _dataProcessor.processedDataPoints;
+    EmgRecording emgRecording = _dataProcessor.dataLog;
     GameplayData gameplayData = GameplayData(_gameStartMillisecondsSinceEpoch,
         gameEndMillisecondsSinceEpoch, _currentScore);
     Future<void> handleGameplayDataFuture = _getSessionDataModel()
-        .handleGameplayData(gameplayData, _gameSettings, gameEmgData)
+        .handleGameplayData(gameplayData, _gameSettings, emgRecording)
         .then((_) {
       _dataProcessor.resetDataLog();
     });
@@ -322,6 +322,7 @@ class FlappyGame extends Game with HasWidgetsOverlay {
               heroTag: _heroTagEndGameButton,
               onPressed: () {
                 _stopMusic();
+                _dataProcessor.stopProcessing();
                 Navigator.pop(this._context);
               },
             ),

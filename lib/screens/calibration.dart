@@ -55,7 +55,7 @@ class _CalibrationPageState extends State<CalibrationPage> {
 
   MockBluetoothManager _bluetoothManager =
       MockBluetoothManager(100, 1, 10, 5, 50);
-  StreamSubscription<EmgSample> _streamSubscription;
+  StreamSubscription<RawEmgSample> _streamSubscription;
   _CalibrationManager _calibrationManager = _CalibrationManager();
 
   @override
@@ -68,7 +68,7 @@ class _CalibrationPageState extends State<CalibrationPage> {
             .getMostRecentCurrentUserCalibrationValue();
     _updateDataToPlot();
     _streamSubscription = _bluetoothManager.getRawDataStream().listen((data) {
-      _calibrationManager.updateWithValue(data.value);
+      _calibrationManager.updateWithValue(data.voltage);
       if (data.timestamp - _timestampMillisecondsOfLastChartUpdate >
           _graphUpdatePeriodMinMilliseconds) {
         _timestampMillisecondsOfLastChartUpdate = data.timestamp;
@@ -227,7 +227,7 @@ class _CalibrationPageState extends State<CalibrationPage> {
                 colorFn: (_, __) => charts.MaterialPalette.red.shadeDefault,
                 domainFn: (_, __) => _textChartBarLabel,
                 measureFn: (_ChartData data, _) => data.value,
-                data: [_ChartData(_thresholdSliderValue.toInt(), null)])
+                data: [_ChartData(_thresholdSliderValue, null)])
               ..setAttribute(charts.rendererIdKey, 'newThresholdLine'),
           ];
 
@@ -270,20 +270,20 @@ class _CalibrationPageState extends State<CalibrationPage> {
 }
 
 class _CalibrationManager {
-  static final int _initialMaxValue = 0;
-  static final int _initialCurrentValue = 0;
+  static final double _initialMaxValue = 0.0;
+  static final double _initialCurrentValue = 0.0;
 
-  int _maxValue = _initialMaxValue;
-  int _currentValue = _initialCurrentValue;
+  double _maxValue = _initialMaxValue;
+  double _currentValue = _initialCurrentValue;
 
-  void updateWithValue(int value) {
+  void updateWithValue(double value) {
     _currentValue = value;
     _maxValue = max(_currentValue, _maxValue);
   }
 
   _ChartData get chartData => _ChartData(_currentValue, _maxValue);
 
-  int get maxValue => _maxValue;
+  double get maxValue => _maxValue;
 
   void reset() {
     _maxValue = _initialMaxValue;
@@ -292,8 +292,8 @@ class _CalibrationManager {
 }
 
 class _ChartData {
-  final int value;
-  final int historicalMaxValue;
+  final double value;
+  final double historicalMaxValue;
 
   _ChartData(this.value, this.historicalMaxValue);
 }

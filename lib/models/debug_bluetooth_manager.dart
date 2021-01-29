@@ -1,22 +1,31 @@
 import 'dart:async';
+import 'dart:math';
 import 'bluetooth_manager.dart';
+import 'callback_collection.dart';
 import 'emg_sample.dart';
 
 import 'package:flutter_blue/flutter_blue.dart';
 
 class DebugBluetoothManager implements BluetoothManager {
-  Map<String, void Function(EmgSample)>
-      _handleSEmgCharacteristicValueCallbacks =
-      Map<String, void Function(EmgSample)>();
-  Map<String, void Function(bool)> _handleIsReadyToProvideValuesCallbacks =
-      Map<String, void Function(bool)>();
+  static const int millisecondsBetweenSamples = 10;
+  static const double randomDataMax = 100.0;
+  static const double randomDataMin = 0.0;
+
+  Random randomNumberGenerator = Random();
+
+  CallbackCollection<String, bool> _handleIsReadyToProvideValuesCallbacks =
+      CallbackCollection<String, bool>();
+  CallbackCollection<String, RawEmgSample> _handleEmgSampleCallbacks =
+      CallbackCollection<String, RawEmgSample>();
+
+  Timer periodicDataGeneratingTimer;
 
   bool _isReadyToProvideValues;
 
   DebugBluetoothManager() : _isReadyToProvideValues = false;
 
   void connect(ConnectionSpec connectionSpec) {
-    Future.delayed(Duration(seconds: 1)).then((_) {
+    Future.delayed(Duration(milliseconds: 200)).then((_) {
       _isReadyToProvideValues = true;
       _notifyIsReadyToProvideValuesState();
     });
@@ -27,49 +36,69 @@ class DebugBluetoothManager implements BluetoothManager {
     _notifyIsReadyToProvideValuesState();
   }
 
-  void addHandleSEmgValueCallback(String name, Function(EmgSample) callback) {
-    if (_handleSEmgCharacteristicValueCallbacks.containsKey(name)) {
-      throw ArgumentError('addHandleSEmgValueCallback failed because a '
-          'callback with name $name already exists.');
-    }
-    _handleSEmgCharacteristicValueCallbacks[name] = callback;
+  void addHandleSEmgValueCallback(
+      String name, Function(RawEmgSample) callback) {
+    _handleEmgSampleCallbacks.addCallback(name, callback);
   }
 
   void removeHandleSEmgValueCallback(String name) {
-    if (_handleSEmgCharacteristicValueCallbacks.containsKey(name)) {
-      _handleSEmgCharacteristicValueCallbacks.remove(name);
-    }
+    _handleEmgSampleCallbacks.removeCallback(name);
   }
 
   void clearHandleSEmgValueCallback() {
-    _handleSEmgCharacteristicValueCallbacks.clear();
+    _handleEmgSampleCallbacks.clearCallbacks();
   }
 
   void _notifyIsReadyToProvideValuesState() {
-    _handleIsReadyToProvideValuesCallbacks.values
-        .forEach((Function callback) => callback(_isReadyToProvideValues));
+    _handleIsReadyToProvideValuesCallbacks.handleValue(_isReadyToProvideValues);
+  }
+
+  @override
+  Future<void> startStreamingValues() {
+    return Future.delayed(Duration(milliseconds: 100)).then((_) {
+      _startStreamingRandomValues();
+    });
+  }
+
+  void _startStreamingRandomValues() {
+    periodicDataGeneratingTimer =
+        Timer.periodic(Duration(milliseconds: millisecondsBetweenSamples), (_) {
+      RawEmgSample sample = RawEmgSample(DateTime.now().millisecondsSinceEpoch,
+          _generateRandomVoltage(), /*gain=*/ 1.0);
+      _handleEmgSampleCallbacks.handleValue(sample);
+    });
+  }
+
+  double _generateRandomVoltage() {
+    return randomDataMin +
+        randomNumberGenerator.nextDouble() * (randomDataMax - randomDataMin);
+  }
+
+  @override
+  Future<void> stopStreamingValues() {
+    return Future.delayed(Duration(milliseconds: 100)).then((_) {
+      periodicDataGeneratingTimer.cancel();
+    });
+  }
+
+  @override
+  Future<void> authenticate() {
+    return Future.delayed(Duration(milliseconds: 100));
   }
 
   bool get isReadyToProvideValues => _isReadyToProvideValues;
 
   void addNotifyIsReadyToProvideValuesStateCallback(
       String name, Function(bool) callback) {
-    if (_handleIsReadyToProvideValuesCallbacks.containsKey(name)) {
-      throw ArgumentError(
-          'addNotifyIsReadyToProvideValuesStateCallback failed because a '
-          'callback with name $name already exists.');
-    }
-    _handleIsReadyToProvideValuesCallbacks[name] = callback;
+    _handleIsReadyToProvideValuesCallbacks.addCallback(name, callback);
   }
 
   void removeNotifyIsReadyToProvideValuesStateCallback(String name) {
-    if (_handleIsReadyToProvideValuesCallbacks.containsKey(name)) {
-      _handleIsReadyToProvideValuesCallbacks.remove(name);
-    }
+    _handleIsReadyToProvideValuesCallbacks.removeCallback(name);
   }
 
   void clearNotifyIsReadyToProvideValuesStateCallbacks() {
-    _handleIsReadyToProvideValuesCallbacks.clear();
+    _handleIsReadyToProvideValuesCallbacks.clearCallbacks();
   }
 
   Future<List<ScanResult>> scanForAvailableSurfaceEmgDevices(
