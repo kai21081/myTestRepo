@@ -4,6 +4,9 @@ import 'dart:math';
 
 import 'package:charts_flutter/flutter.dart' as charts;
 import 'package:flutter/material.dart';
+import 'package:gameplayground/models/session_data.dart';
+import 'package:gameplayground/models/user.dart';
+import 'package:provider/provider.dart';
 
 // Charts to consider:
 // - games per day over time
@@ -21,6 +24,7 @@ class GameplayDataPage extends StatefulWidget {
 }
 
 class _GameplayDataPageState extends State<GameplayDataPage> {
+
 
   @override
   void initState() {
@@ -43,10 +47,20 @@ class _GameplayDataPageState extends State<GameplayDataPage> {
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[],
+          children: <Widget>[
+            Text(_getUserData(context).toString()),
+          ],
         ),
       ),
     );
+  }
+
+  Future<User> _getUserData(context) {
+    return _getSessionDataModel(context).getUser(_getSessionDataModel(context).currentUserId);
+  }
+
+  SessionDataModel _getSessionDataModel(context) {
+    return Provider.of<SessionDataModel>(context, listen: false);
   }
 
 }
