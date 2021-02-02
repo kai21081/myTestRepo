@@ -45,6 +45,11 @@ class SessionDataModel extends ChangeNotifier {
     return _database.getUserData();
   }
 
+  //Added this method for use in the gameplay data screen
+  Future<User> getUser(String id) async {
+    return _database.getUserWithId(id);
+  }
+
   // Checks if user already exists with same ID. Returns false if exists.
   Future<bool> canAddUser(User user) async {
     return _database.containsUserWithId(user.id).then((value) => !value);
