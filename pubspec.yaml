@@ -29,6 +29,7 @@ flutter:
   uses-material-design: true
 
   assets:
+    - assets/levels/
     - assets/audio/background_music.mp3
     - assets/images/backgrounds/ground.png
     - assets/images/backgrounds/sky.png

@@ -1,5 +1,9 @@
+import 'dart:collection';
 import 'dart:math';
 import 'dart:ui';
+import 'dart:io';
+import 'package:path/path.dart';
+import 'package:flutter/services.dart' show rootBundle;
 
 import 'package:gameplayground/components/horizontally_moving_sprite.dart';
 
@@ -11,13 +15,13 @@ class TargetController {
   double _spawnFrequencyHertz = 100;
   double _timeSinceLastSpawn = 0.0;
   bool _isInitialized = false;
-
+  int _totalTime = 0;
   String _targetImageName;
   Rect _targetRegionForCollision;
-
+  Map<int, List<double>> _spawnMap;
   double _targetWidthAsScreenWidthFraction;
   double _targetHeightAsScreenWidthFraction;
-
+  File _spawnConfig;
   double _spawnMinHeightAsScreenHeightFraction;
   double _spawnMaxHeightAsScreenHeightFraction;
 
@@ -29,7 +33,9 @@ class TargetController {
       double targetHeightAsScreenWidthFraction,
       double spawnMinHeightAsScreenHeightFraction,
       double spawnMaxHeightAsScreenHeightFraction,
-      double spawnFrequencyHertz) {
+      double spawnFrequencyHertz,
+      //String levelPath
+      ) {
     _targets = List<HorizontallyMovingSprite>();
     _velocityInScreenWidthsPerSecond = velocityInScreenWidthsPerSecond;
     _targetImageName = targetImageName;
@@ -41,6 +47,7 @@ class TargetController {
     _spawnMaxHeightAsScreenHeightFraction =
         spawnMaxHeightAsScreenHeightFraction;
     _spawnFrequencyHertz = spawnFrequencyHertz;
+    _parseSpawnMapFromFile('assets/levels/level1.txt'); //levelPath
   }
 
   // Removes targets with collision and returns collision count (i.e. points
@@ -63,31 +70,22 @@ class TargetController {
     if (!_isInitialized) {
       return;
     }
-
+    _totalTime += 1;
     _targets.forEach((HorizontallyMovingSprite target) => target.update(time));
     _timeSinceLastSpawn += time;
 
-    if (_timeSinceLastSpawn > 1.0 / _spawnFrequencyHertz) {
-      _spawnTarget();
-      _timeSinceLastSpawn = 0.0;
+    if (_spawnMap != null && _spawnMap.containsKey(_totalTime)) {
+      _spawnMap[_totalTime].forEach((location) {
+        _spawnTargetAtLocation(location);
+      });
     }
   }
 
-  void _spawnTarget() {
+  void _spawnTargetAtLocation(double position) {
     double targetHeight =
         _targetHeightAsScreenWidthFraction * _screenSize.width;
     double targetWidth = _targetWidthAsScreenWidthFraction * _screenSize.width;
-
-    // Screen position calculated from top left corner.
-    double yMinTopPosition =
-        _spawnMinHeightAsScreenHeightFraction * _screenSize.height;
-    double yMaxTopPosition =
-        _spawnMaxHeightAsScreenHeightFraction * _screenSize.height -
-            targetHeight;
-    double yTopPositionRange = yMaxTopPosition - yMinTopPosition;
-
-    double yTopPositionForSpawn = yMinTopPosition +
-        _randomNumberGenerator.nextDouble() * yTopPositionRange;
+    double yTopPositionForSpawn = position * _screenSize.height;
 
     Rect initialPosition = Rect.fromLTWH(
         _screenSize.width, yTopPositionForSpawn, targetWidth, targetHeight);
@@ -119,5 +117,28 @@ class TargetController {
     }
 
     _screenSize = size;
+  }
+
+  void _parseSpawnMapFromFile(String path) {
+    Future<String> level = rootBundle.loadString(path);
+    Future.delayed(Duration(milliseconds: 10),() => level.then((text) {
+       _spawnMap = _getMap(text);
+    }));
+  }
+
+  HashMap<int, List<double>> _getMap(String spawns) {
+    Map<int, List<double>> spawnMap = new HashMap<int, List<double>>();
+    List<String> spawnList = spawns.split('\n');
+    for (int i = 0; i < spawnList.length; i++) {
+      List<String> singleSpawns = spawnList[i].split(' ');
+      List<double> spawnLoci = new List<double>();
+      for (int j = 1; j < singleSpawns.length; j++) {
+        spawnLoci.add(double.parse(singleSpawns[j]));
+      }
+      if (singleSpawns[0] != '') {
+        spawnMap.putIfAbsent(int.parse(singleSpawns[0]), () => spawnLoci);
+      }
+    }
+    return spawnMap;
   }
 }
