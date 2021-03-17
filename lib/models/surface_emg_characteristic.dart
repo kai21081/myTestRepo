@@ -2,6 +2,7 @@
 // relevant for Surface EMG characteristics.
 
 import 'dart:async';
+import 'dart:typed_data';
 
 import 'package:flutter_blue/flutter_blue.dart';
 
@@ -53,7 +54,8 @@ class ReadOnlySurfaceEmgCharacteristic<ProcessedDataType> {
     }
 
     if (_characteristic.isNotifying == _shouldBeNotifying) {
-      print('returning because _characteristic.isNotifying == _shouldBeNotifying');
+      print(
+          'returning because _characteristic.isNotifying == _shouldBeNotifying');
       return;
     }
 
@@ -169,8 +171,9 @@ class WriteOnlySurfaceEmgCharacteristic<DataType> {
   Future<bool> writeValue(DataType value) {
     print('writeValue, _characteristic is null: ${_characteristic == null}');
     print('list: ${_dataTypeToIntListFunction(value)}, built from: $value');
-    return _characteristic.write(this._dataTypeToIntListFunction(value),
-        withoutResponse: false).catchError((e) => false);
+    return _characteristic
+        .write(this._dataTypeToIntListFunction(value), withoutResponse: false)
+        .catchError((e) => false);
   }
 }
 
@@ -195,5 +198,24 @@ class ConnectionModeAuthenticationCharacteristic
 
   static List<int> _valueToIntListFunction(String value) {
     return value.codeUnits;
+  }
+}
+
+class GainControlCharacteristic extends WriteOnlySurfaceEmgCharacteristic<int> {
+  GainControlCharacteristic(BluetoothCharacteristic characteristic)
+      : super(
+            characteristic, GainControlCharacteristic._valueToIntListFunction);
+
+  static List<int> _valueToIntListFunction(int value) {
+    // First value should be 1 which specifies that the next 4 bytes specify
+    // a target gain.
+    List<int> values = [1];
+
+    // Set float value.
+    var buffer = new Int8List(4).buffer;
+    var bufferData = ByteData.view(buffer);
+    bufferData.setInt32(0, value, Endian.little);
+    values.addAll(buffer.asInt8List());
+    return values;
   }
 }

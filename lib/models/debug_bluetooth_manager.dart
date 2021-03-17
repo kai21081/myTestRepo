@@ -60,6 +60,9 @@ class DebugBluetoothManager implements BluetoothManager {
     });
   }
 
+  @override
+  Future<void> setGain(int gain) {}
+
   void _startStreamingRandomValues() {
     periodicDataGeneratingTimer =
         Timer.periodic(Duration(milliseconds: millisecondsBetweenSamples), (_) {

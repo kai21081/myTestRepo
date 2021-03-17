@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:collection';
+import 'dart:ffi';
 import 'dart:io';
 import 'dart:math';
 
@@ -45,6 +46,8 @@ class _InputTimeseriesPageState extends State<InputTimeseriesPage> {
   int _packetCountForAverage = 20;
   String _currentPacketRateString = 'awaiting samples';
 
+  int _currentGain = 100;
+
   final _saveTextEditingController = TextEditingController();
 
   final _saveRecordingFormKey = GlobalKey<FormState>();
@@ -69,6 +72,8 @@ class _InputTimeseriesPageState extends State<InputTimeseriesPage> {
         _timeseriesWindow.addEmgSample(sample);
       });
     });
+
+    _setGain(_currentGain);
 
     _dataProcessor = ThresholdedTriggerDataProcessor(_bluetoothManager);
     _dataProcessor.startProcessing(
@@ -111,7 +116,11 @@ class _InputTimeseriesPageState extends State<InputTimeseriesPage> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.start,
           children: <Widget>[
-            SizedBox(height: 50),
+            SizedBox(height: 10),
+            Text('Set Gain'),
+            SizedBox(height: 10),
+            _buildGainButtonRow(),
+            SizedBox(height: 10),
             SizedBox(
                 height: 250,
                 width: 250,
@@ -134,8 +143,8 @@ class _InputTimeseriesPageState extends State<InputTimeseriesPage> {
                             charts.NumericEndPointsTickProviderSpec()),
                     primaryMeasureAxis: charts.NumericAxisSpec(
                         tickProviderSpec: charts.StaticNumericTickProviderSpec(
-                            [charts.TickSpec(0), charts.TickSpec(0.001)])))),
-            SizedBox(height: 50),
+                            [charts.TickSpec(-0.00001\), charts.TickSpec(0.0001)])))),
+            SizedBox(height: 30),
             Row(mainAxisAlignment: MainAxisAlignment.center, children: <Widget>[
               FloatingActionButton.extended(
                   onPressed: _onRecordButtonPressed,
@@ -144,9 +153,9 @@ class _InputTimeseriesPageState extends State<InputTimeseriesPage> {
                   icon: Icon(Icons.fiber_manual_record,
                       color: _recording ? Colors.red : Colors.white)),
             ]),
-            SizedBox(height: 50),
+            SizedBox(height: 20),
             Text(_currentPacketRateString),
-            SizedBox(height: 35),
+            SizedBox(height: 15),
             _buildPreviousRecordingPanel()
           ],
         ),
@@ -159,6 +168,10 @@ class _InputTimeseriesPageState extends State<InputTimeseriesPage> {
       return Container();
     }
 
+    double maxRecordedValue = _previousRecording.data
+        .map((rawEmgSample) => rawEmgSample.voltage)
+        .reduce(max);
+
     String previousRecordingDuration =
         _previousRecording.durationSeconds.toStringAsFixed(3);
     return Column(
@@ -167,7 +180,7 @@ class _InputTimeseriesPageState extends State<InputTimeseriesPage> {
           Divider(indent: 20, endIndent: 20, thickness: 4),
           Text('Previous Recording:'),
           Text('   Duration: ${previousRecordingDuration}s'),
-          SizedBox(height: 20),
+          SizedBox(height: 10),
           FloatingActionButton.extended(
               label: Text(_labelSaveButton),
               heroTag: _heroTagSaveButton,
@@ -231,7 +244,8 @@ class _InputTimeseriesPageState extends State<InputTimeseriesPage> {
                   context: context,
                   builder: (context) {
                     return SimpleDialog(
-                      title: Text('test'),
+                      title: Text(
+                          '${_previousRecording.durationMilliseconds} ms recording'),
                       children: <Widget>[
                         SizedBox(
                             height: 200,
@@ -256,13 +270,10 @@ class _InputTimeseriesPageState extends State<InputTimeseriesPage> {
                                   viewport: charts.NumericExtents(0.0, 500.0)),
                               primaryMeasureAxis: charts.NumericAxisSpec(
                                   tickProviderSpec:
-                                      charts.BasicNumericTickProviderSpec()),
-//                              primaryMeasureAxis: charts.NumericAxisSpec(
-//                                  tickProviderSpec:
-//                                      charts.StaticNumericTickProviderSpec([
-//                                charts.TickSpec(0),
-//                                charts.TickSpec(100)
-//                              ])),
+                                      charts.StaticNumericTickProviderSpec([
+                                charts.TickSpec(0.0),
+                                charts.TickSpec(1.1 * maxRecordedValue)
+                              ])),
                             ))
                       ],
                     );
@@ -275,6 +286,49 @@ class _InputTimeseriesPageState extends State<InputTimeseriesPage> {
   String _getCurrentFormFilenameWithTimestampSuffix() {
     return _saveTextEditingController.text +
         _previousRecording.filenameTimestampSuffix;
+  }
+
+  Row _buildGainButtonRow() {
+    return Row(mainAxisAlignment: MainAxisAlignment.center, children: <Widget>[
+      _buildSetGainButton(100, '1e2'),
+      SizedBox(width: 10),
+      _buildSetGainButton(1000, '1e3'),
+      SizedBox(width: 10),
+      _buildSetGainButton(10000, '1e4'),
+      SizedBox(width: 10),
+      _buildSetGainButton(20000, '2e4')
+    ]);
+  }
+
+  SizedBox _buildSetGainButton(int gain, String label) {
+    final theme = Theme.of(context);
+    Color backgroundColor;
+    if (gain == _currentGain) {
+      backgroundColor = theme.colorScheme.primary;
+    } else {
+      backgroundColor = Colors.grey[300];
+    }
+    return SizedBox(
+        height: 30,
+        width: 60,
+        child: FloatingActionButton.extended(
+            label: Text(label),
+            onPressed: () => _onGainButtonPushed(gain),
+            disabledElevation: 0.0,
+            backgroundColor: backgroundColor,
+            heroTag: 'heroTagGainControlButton$label'));
+  }
+
+  void _onGainButtonPushed(int gain) {
+    setState(() async {
+      await _setGain(gain);
+      _currentGain = gain;
+    });
+  }
+
+  Future<void> _setGain(int gain) {
+    _bluetoothManager.setGain(gain);
+    print('Setting gain to $gain. Currently $_currentGain');
   }
 
   void _onRecordButtonPressed() {
