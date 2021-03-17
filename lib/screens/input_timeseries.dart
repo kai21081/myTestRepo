@@ -143,7 +143,7 @@ class _InputTimeseriesPageState extends State<InputTimeseriesPage> {
                             charts.NumericEndPointsTickProviderSpec()),
                     primaryMeasureAxis: charts.NumericAxisSpec(
                         tickProviderSpec: charts.StaticNumericTickProviderSpec(
-                            [charts.TickSpec(-0.00001\), charts.TickSpec(0.0001)])))),
+                            [charts.TickSpec(-0.00001), charts.TickSpec(0.0001)])))),
             SizedBox(height: 30),
             Row(mainAxisAlignment: MainAxisAlignment.center, children: <Widget>[
               FloatingActionButton.extended(
