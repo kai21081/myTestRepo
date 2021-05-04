@@ -100,7 +100,8 @@ class SurfaceEmgGameDatabase extends ChangeNotifier {
         '${_DatabaseColumnNames.gameEndTimestampColumnName} '
         '$_columnTypeInteger, '
         '${_DatabaseColumnNames.gameUserIdColumnName} $_columnTypeText, '
-        '${_DatabaseColumnNames.gameScoreColumnName} $_columnTypeInteger)');
+        '${_DatabaseColumnNames.gameScoreColumnName} $_columnTypeInteger)'
+        '${_DatabaseColumnNames.numFlapsColumnName} $_columnTypeInteger)');
   }
 
   Future<bool> containsUserWithId(String id) async {
@@ -135,12 +136,13 @@ class SurfaceEmgGameDatabase extends ChangeNotifier {
   // Will fail ungracefully if start timestamp already exists in table.
   // TODO: Do some more robust error handling.
   Future<void> insertDataFromSingleGame(int gameStartTimestamp,
-      int gameEndTimestamp, String userId, int score) async {
+      int gameEndTimestamp, String userId, int score, int numFlaps) async {
     await _database.insert(_gameplayDataDatabaseName, {
       _DatabaseColumnNames.gameStartTimestampColumnName: gameStartTimestamp,
       _DatabaseColumnNames.gameEndTimestampColumnName: gameEndTimestamp,
       _DatabaseColumnNames.gameUserIdColumnName: userId,
-      _DatabaseColumnNames.gameScoreColumnName: score
+      _DatabaseColumnNames.gameScoreColumnName: score,
+      _DatabaseColumnNames.numFlapsColumnName: numFlaps,
     });
 
     updateHighScoreIfBetter(userId, score);
@@ -328,6 +330,7 @@ class _DatabaseColumnNames {
   static const String gameEndTimestampColumnName = 'gameEndTimestamp';
   static const String gameUserIdColumnName = 'userId';
   static const String gameScoreColumnName = 'score';
+  static const String numFlapsColumnName = 'numFlaps';
 
   static const String flapVelocityInScreenHeightFractionPerSecondColumnName =
       'flapVelocityInScreenHeightFractionPerSecond';

@@ -351,7 +351,7 @@ class _InputTimeseriesPageState extends State<InputTimeseriesPage> {
 
   void _handleEmgSample(EmgSample sample) {
     if (_recording) {
-      _currentRecording.addSample(sample);
+      _currentRecording.addSample(sample,false);
     }
   }
 }

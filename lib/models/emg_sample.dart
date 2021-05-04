@@ -1,14 +1,16 @@
 import 'dart:typed_data';
 
-abstract class EmgSample {
+abstract class EmgSample  implements Comparable<EmgSample>{
   final int timestamp;
 
   EmgSample(this.timestamp);
 
   Map<String, dynamic> asMap();
+
+  int compareTo(EmgSample other);
 }
 
-class RawEmgSample extends EmgSample {
+class RawEmgSample extends EmgSample{
   final double voltage;
   final double gain;
 
@@ -33,9 +35,14 @@ class RawEmgSample extends EmgSample {
   Map<String, dynamic> asMap() {
     return {'timestamp': timestamp, 'rawValue': voltage, 'gain': gain};
   }
+
+  int compareTo(EmgSample other) {
+    RawEmgSample otherRaw = other;
+    return voltage.compareTo(otherRaw.voltage);
+  }
 }
 
-class ProcessedEmgSample extends EmgSample {
+class ProcessedEmgSample extends EmgSample{
   double gain;
   double rawValue;
   double filteredValue;
@@ -59,5 +66,10 @@ class ProcessedEmgSample extends EmgSample {
       'trigger': trigger,
       'triggerSignalPassedToGame': triggerSignalPassedToGame
     };
+  }
+
+  int compareTo(EmgSample other) {
+    ProcessedEmgSample otherProcessed = other;
+    return filteredValue.compareTo(otherProcessed.filteredValue);
   }
 }

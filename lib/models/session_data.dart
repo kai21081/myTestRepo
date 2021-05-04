@@ -87,7 +87,7 @@ class SessionDataModel extends ChangeNotifier {
   //  - Game Start (timestamp of game start)
   //  - Game End (timestamp of game end)
   //  - Game Score (int of score of game)
-  //  - Activation Count (int of number of "muscle activations")
+  //  - Number of Flaps (int of number of "muscle activations")
   //  - App Version (some identifier of app (or sensor stuff))
   //  - Sensor Data Path (how will this be generated?)
   //
@@ -106,7 +106,7 @@ class SessionDataModel extends ChangeNotifier {
       EmgRecording emgRecording) async {
     Future<void> databaseWriteAndUserUpdateFuture = _database
         .insertDataFromSingleGame(gameplayData.startTime, gameplayData.endTime,
-            _currentUser.id, gameplayData.score)
+            _currentUser.id, gameplayData.score, gameplayData.numFlaps)
         .then((_) async {
       _currentUser = await _database.getUserWithId(_currentUser.id);
     });
