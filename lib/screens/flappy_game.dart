@@ -49,7 +49,7 @@ class FlappyGame extends Game with HasWidgetsOverlay {
   final String _heroTagMainMenuButton = 'main_menu_button';
   final String _heroTagEndGameButton = 'end_game_button';
 
-  FlappyGame(this._context, this._dataProcessor, String levelPath, {practiceMode: false}) {
+  FlappyGame(this._context, this._dataProcessor, String levelPath, {practiceMode: true}) {
     _gameSettings = _getSessionDataModel().gameSettings;
     _practiceMode = practiceMode;
     _levelPath = levelPath;
@@ -231,14 +231,14 @@ class FlappyGame extends Game with HasWidgetsOverlay {
     _isGameOver = true;
 
     EmgRecording emgRecording = _dataProcessor.dataLog;
+    print(_birdController.getFlaps());
     GameplayData gameplayData = GameplayData(_gameStartMillisecondsSinceEpoch,
-        gameEndMillisecondsSinceEpoch, _currentScore);
+        gameEndMillisecondsSinceEpoch, _currentScore, _birdController.getFlaps());
     Future<void> handleGameplayDataFuture = _getSessionDataModel()
         .handleGameplayData(gameplayData, _gameSettings, emgRecording)
         .then((_) {
       _dataProcessor.resetDataLog();
     });
-    print("game over");
     _birdController.killBird();
     _highScore = max(_highScore, _currentScore);
     _stopMusic();
@@ -265,6 +265,13 @@ class FlappyGame extends Game with HasWidgetsOverlay {
                       _restartGame();
                     },
                   ),
+                  SizedBox(height: 20),
+                  Text('Number of Flaps:' + _birdController.getFlaps().toString(),
+                      style: TextStyle(
+                        color: Colors.black,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 20,
+                        decoration: TextDecoration.none)),
                   SizedBox(height: 20),
                   FloatingActionButton.extended(
                     label: Text(_labelMainMenu),

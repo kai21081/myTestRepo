@@ -90,7 +90,7 @@ class GameSettings {
       this.columnFractionHeightForCollision = 0.9,
       this.columnHeightMinBoundFromScreenTop = 0.6,
       this.columnHeightMaxBoundFromScreenTop = 0.8,
-      this.practiceMode = false,
+      this.practiceMode = true,
       this.playMusic = true,
       this.musicVolume = defaultMusicVolume,
       this.skyBackgroundFractionScreenHeight = 1.0,
