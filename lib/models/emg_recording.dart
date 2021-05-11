@@ -37,6 +37,9 @@ class EmgRecording<T extends EmgSample> {
   }
 
   void addSample(T sample, bool isFlap) {
+    //TODO: Fix PeakFlap system to only consider the first peak within a flap (~500 ms)
+    //TODO: Add initial baseline average and during-game baseline average.
+    //TODO: Implement system to remove things too far from baseline
     _data.add(sample);
     if(isFlap) {
       if(!inFlap) {
@@ -49,17 +52,16 @@ class EmgRecording<T extends EmgSample> {
     } else {
       if(inFlap) {
         inFlap = false;
-        peakFlapIndex++;
       }
-      sampleCountBaseline++;
+
+      //Avinash Boddu: Abstract out this if with a value abstract method
       if(sample is RawEmgSample) {
         RawEmgSample sampleRaw = sample;
         averageBaseline += (sampleRaw.voltage - averageBaseline)/sampleCountBaseline;
       } else if(sample is ProcessedEmgSample) {
-        ProcessedEmgSample sampleRaw = sample;
-        averageBaseline += (sampleRaw.filteredValue - averageBaseline)/sampleCountBaseline;
+        ProcessedEmgSample sampleProcessed = sample;
+        averageBaseline += (sampleProcessed.filteredValue - averageBaseline)/sampleCountBaseline;
       }
-
     }
   }
 
