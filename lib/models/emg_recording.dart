@@ -1,4 +1,5 @@
 import 'dart:collection';
+import 'dart:math';
 
 import 'package:gameplayground/models/emg_sample.dart';
 
@@ -11,10 +12,10 @@ class EmgRecording<T extends EmgSample> {
 
   UnmodifiableListView<T> get data => UnmodifiableListView<T>(_data);
 
-  int sampleCountBaseline = 0;
-  double averageBaseline = 0;
+  bool isInitial = true;
+  Average initialBaseline = new Average();
+  Average inGameBaseline = new Average();
 
-  int peakFlapIndex = 0;
   bool inFlap = false;
   List<T> _peakFlap = List<T>();
 
@@ -36,31 +37,28 @@ class EmgRecording<T extends EmgSample> {
         Duration.millisecondsPerSecond.toDouble();
   }
 
-  void addSample(T sample, bool isFlap) {
-    //TODO: Fix PeakFlap system to only consider the first peak within a flap (~500 ms)
-    //TODO: Add initial baseline average and during-game baseline average.
-    //TODO: Implement system to remove things too far from baseline
+  void addSample(T sample, bool isFlap, int refractoryPeriod) {
     _data.add(sample);
-    if(isFlap) {
-      if(!inFlap) {
-        _peakFlap.add(sample);
-      }
-      else if (_peakFlap.last.compareTo(sample) < 0) {
+    if(isFlap && (isInitial || (sample.timestamp - _peakFlap.last.timestamp) > refractoryPeriod)) {
+      _peakFlap.add(sample);
+      inFlap = true;
+    }
+    if(inFlap) {
+      isInitial = false;
+      if (_peakFlap.last.compareTo(sample) <= 0) {
         _peakFlap.removeLast();
         _peakFlap.add(sample);
       }
-    } else {
-      if(inFlap) {
+      else {
         inFlap = false;
       }
-
-      //Avinash Boddu: Abstract out this if with a value abstract method
-      if(sample is RawEmgSample) {
-        RawEmgSample sampleRaw = sample;
-        averageBaseline += (sampleRaw.voltage - averageBaseline)/sampleCountBaseline;
-      } else if(sample is ProcessedEmgSample) {
-        ProcessedEmgSample sampleProcessed = sample;
-        averageBaseline += (sampleProcessed.filteredValue - averageBaseline)/sampleCountBaseline;
+    } else {
+      if(isInitial) {
+        if(initialBaseline.shouldAddSample(sample))
+          initialBaseline.addSample(sample);
+      } else {
+        if(inGameBaseline.shouldAddSample(sample))
+          initialBaseline.addSample(sample);
       }
     }
   }
@@ -73,4 +71,50 @@ class EmgRecording<T extends EmgSample> {
     return UnmodifiableListView<T>(
         _data.sublist(_data.length - numberOfSamples));
   }
+}
+
+class Average {
+  double mean;
+  int numSamples;
+  double stdDev;
+  final double zScoreLimit = 2;//Number of standard deviations away from the mean to discard samples
+
+  Average() {
+    mean = 0;
+    numSamples = 0;
+    stdDev = 0;
+  }
+
+  bool shouldAddSample(EmgSample e) {
+    double sample = emgToSample(e);
+    return stdDev == 0 || mean == 0 || sample <= mean + zScoreLimit * stdDev;
+  }
+
+  void addSample(EmgSample e) {
+    double sample = emgToSample(e);
+    double variance = stdDev*stdDev;
+    numSamples++;
+    double newMean = mean + (sample-mean)/numSamples;
+
+    //https://math.stackexchange.com/questions/775391/can-i-calculate-the-new-standard-deviation-when-adding-a-value-without-knowing-t
+    variance = ((numSamples - 2)*variance + (sample - newMean)*(sample - mean))/(numSamples - 1);
+    stdDev = sqrt(variance);
+    mean = newMean;
+  }
+
+  double emgToSample(EmgSample e) {
+    if(e is RawEmgSample) {
+      RawEmgSample sampleRaw = e;
+      return sampleRaw.voltage;
+    } else if(e is ProcessedEmgSample) {
+      ProcessedEmgSample sampleProcessed = e;
+      return sampleProcessed.filteredValue  ;
+    }
+  }
+
+  double getMean() {return mean;}
+
+  double getStdDev() {return stdDev;}
+
+
 }
