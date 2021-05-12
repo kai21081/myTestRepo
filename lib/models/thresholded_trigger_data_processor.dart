@@ -23,8 +23,6 @@ class ThresholdedTriggerDataProcessor {
   double _triggeringThreshold = 0.0001;
 
   int _lastTriggerTimestamp = -_triggerSignalRefractoryPeriodMilliseconds;
-  int _numFlaps = 0;
-  int get numFlaps => _numFlaps;
 
   EmgRecording get dataLog => _dataLog;
 
@@ -61,11 +59,10 @@ class ThresholdedTriggerDataProcessor {
     if (passTriggerToGame) {
       _onTriggerCallback(processedDataPoint);
       _lastTriggerTimestamp = processedDataPoint.timestamp;
-      _numFlaps++;
     }
 
     if (_logData) {
-      _logDataPoint(processedDataPoint, processedDataPoint.rawValue > _previousFilteredValue);
+      _logDataPoint(processedDataPoint, passTriggerToGame, _triggerSignalRefractoryPeriodMilliseconds);
     }
   }
 
@@ -80,7 +77,7 @@ class ThresholdedTriggerDataProcessor {
     _dataLog = EmgRecording<ProcessedEmgSample>();
   }
 
-  void _logDataPoint(ProcessedEmgSample sample, bool isFlap) {
-    _dataLog.addSample(sample, isFlap);
+  void _logDataPoint(ProcessedEmgSample sample, bool isFlap, int refractoryPeriod) {
+    _dataLog.addSample(sample, isFlap, refractoryPeriod);
   }
 }
