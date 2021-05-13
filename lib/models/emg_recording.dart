@@ -8,6 +8,9 @@ import 'package:gameplayground/models/emg_sample.dart';
 // convenience methods for accessing certain features of the dataset as well as
 // formatting the dataset in a manner amenable to saving.
 class EmgRecording<T extends EmgSample> {
+  //Turning this on will save every data point, for debugging purposes
+  //KEEP OFF IN PRODUCTION
+  static const DEBUG_RECORDING = false;
   List<T> _data = List<T>();
 
   UnmodifiableListView<T> get data => UnmodifiableListView<T>(_data);
@@ -37,19 +40,26 @@ class EmgRecording<T extends EmgSample> {
         Duration.millisecondsPerSecond.toDouble();
   }
 
+  //Adds another sample to the EMG recording
+  //Takes in the sample, a boolean if this is considered a flap in game
+  //and the refractory period of a flap
   void addSample(T sample, bool isFlap, int refractoryPeriod) {
-    _data.add(sample);
+    //Save every sample if debugging
+    if(DEBUG_RECORDING)
+      _data.add(sample);
+
+    //If this is a flap and it has been enough time since the last flap
     if(isFlap && (isInitial || (sample.timestamp - _peakFlap.last.timestamp) > refractoryPeriod)) {
       _peakFlap.add(sample);
       inFlap = true;
     }
     if(inFlap) {
-      isInitial = false;
+      isInitial = false;//We're no longer in the initial baseline section
       if (_peakFlap.last.compareTo(sample) <= 0) {
         _peakFlap.removeLast();
         _peakFlap.add(sample);
       }
-      else {
+      else {//Only records the first peak of a flp
         inFlap = false;
       }
     } else {
@@ -73,6 +83,7 @@ class EmgRecording<T extends EmgSample> {
   }
 }
 
+//This class is used to calculate and store averages
 class Average {
   double mean;
   int numSamples;
