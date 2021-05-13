@@ -11,14 +11,17 @@ class EmgRecording<T extends EmgSample> {
   //Turning this on will save every data point, for debugging purposes
   //KEEP OFF IN PRODUCTION
   static const DEBUG_RECORDING = false;
+
   List<T> _data = List<T>();
 
   UnmodifiableListView<T> get data => UnmodifiableListView<T>(_data);
 
+  //Variables used for finding baseline averages
   bool isInitial = true;
   Average initialBaseline = new Average();
   Average inGameBaseline = new Average();
 
+  //Variables used for listing peak flaps
   bool inFlap = false;
   List<T> _peakFlap = List<T>();
 
