@@ -12,7 +12,7 @@ class BirdController {
   Bird _bird;
   bool _isInitialized = false;
   Size _screenSize;
-  int _numFlaps;
+  int _numFlaps = 0;
 
   int get numFlaps => _numFlaps;
 
