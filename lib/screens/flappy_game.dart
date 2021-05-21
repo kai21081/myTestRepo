@@ -1,6 +1,9 @@
 import 'dart:collection';
 import 'dart:math';
 import 'dart:ui';
+import 'dart:io';
+import 'package:path/path.dart' as path;
+import 'package:flutter/material.dart';
 
 import 'package:flame/flame.dart';
 import 'package:flame/game.dart';
@@ -16,6 +19,7 @@ import 'package:gameplayground/models/gameplay_data.dart';
 import 'package:gameplayground/models/session_data.dart';
 import 'package:gameplayground/models/thresholded_trigger_data_processor.dart';
 import 'package:provider/provider.dart';
+import 'package:flutter/services.dart' show rootBundle;
 
 import '../models/game_settings.dart';
 
@@ -33,6 +37,7 @@ class FlappyGame extends Game with HasWidgetsOverlay {
   int _highScore;
   int _gameStartMillisecondsSinceEpoch;
   bool _isGameOver = false;
+  bool _isLevelCompleted = false;
   bool _practiceMode;
   String _levelPath;
   ThresholdedTriggerDataProcessor _dataProcessor;
@@ -53,6 +58,7 @@ class FlappyGame extends Game with HasWidgetsOverlay {
     _gameSettings = _getSessionDataModel().gameSettings;
     _practiceMode = practiceMode;
     _levelPath = levelPath;
+    _screenSize = Size(392.7, 807.3); // Just broke? does not appear in game settings
     _initialize();
   }
 
@@ -66,25 +72,20 @@ class FlappyGame extends Game with HasWidgetsOverlay {
     if (_gameSettings.playMusic) {
       _startMusic();
     }
-
     _highScore = _getSessionDataModel().currentUserHighScore;
 
     _birdController = BirdController(_gameSettings);
     _createSkyBackgroundController();
     _createGrassBackgroundController();
-
     if (_gameSettings.includeCherries) {
       _createCherryTargetController();
     }
-
     if (_gameSettings.includeColumns) {
       _createColumnTargetController();
     }
-
     resize(await Flame.util.initialDimensions());
     _callFunctionOnControllers(
         (controller) => controller.initialize(_screenSize));
-
     // Add score counter.
     _currentScore = 0;
     _gameStartMillisecondsSinceEpoch = DateTime.now().millisecondsSinceEpoch;
@@ -171,13 +172,10 @@ class FlappyGame extends Game with HasWidgetsOverlay {
     if (_gameSettings.includeColumns) {
       function(_columnObstacleController);
     }
-
     function(_grassBackgroundController);
-
     if (_gameSettings.includeCherries) {
       function(_targetController);
     }
-
     function(_birdController);
   }
 
@@ -188,11 +186,10 @@ class FlappyGame extends Game with HasWidgetsOverlay {
 
   @override
   void resize(Size size) {
-    _screenSize = size;
     super.resize(size);
 
     _callFunctionOnControllers(
-        (controller) => controller.resizeScreen(_screenSize));
+        (controller) => controller.resizeScreen(size));
   }
 
   @override
@@ -221,6 +218,9 @@ class FlappyGame extends Game with HasWidgetsOverlay {
     if ((!_practiceMode &&
         (gameEndingGroundCollisionDetected || columnCollisionDetected)) ||
         _targetController.isGameOver()) {
+      if (_targetController.isCompleted()) {
+        _isLevelCompleted = true;
+      }
       _endGame();
     }
   }
@@ -229,9 +229,12 @@ class FlappyGame extends Game with HasWidgetsOverlay {
     _dataProcessor.stopProcessing();
     int gameEndMillisecondsSinceEpoch = DateTime.now().millisecondsSinceEpoch;
     _isGameOver = true;
-
+    SessionDataModel session = _getSessionDataModel();
+    if (_targetController.isCompleted()) {
+      session.handleLevelProg(session.getCurrentUser().id, _targetController.getLevel());
+    }
+    print(session.getCurrentUser());
     EmgRecording emgRecording = _dataProcessor.dataLog;
-    print(_birdController.getFlaps());
     GameplayData gameplayData = GameplayData(_gameStartMillisecondsSinceEpoch,
         gameEndMillisecondsSinceEpoch, _currentScore, _birdController.getFlaps());
     Future<void> handleGameplayDataFuture = _getSessionDataModel()

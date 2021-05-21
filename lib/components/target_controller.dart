@@ -19,12 +19,14 @@ class TargetController {
   String _targetImageName;
   Rect _targetRegionForCollision;
   bool _gameOver = false;
+  bool _completed = false;
   Map<int, List<double>> _spawnMap;
   double _targetWidthAsScreenWidthFraction;
   double _targetHeightAsScreenWidthFraction;
   File _spawnConfig;
   double _spawnMinHeightAsScreenHeightFraction;
   double _spawnMaxHeightAsScreenHeightFraction;
+  int _level;
 
   TargetController(
       double velocityInScreenWidthsPerSecond,
@@ -49,6 +51,7 @@ class TargetController {
         spawnMaxHeightAsScreenHeightFraction;
     _spawnFrequencyHertz = spawnFrequencyHertz;
     _parseSpawnMapFromFile(levelPath);
+    _level = int.parse(levelPath.substring(levelPath.length - 5, levelPath.length - 4));
   }
 
   // Removes targets with collision and returns collision count (i.e. points
@@ -67,6 +70,14 @@ class TargetController {
         .forEach((HorizontallyMovingSprite target) => target.render(canvas));
   }
 
+  bool isCompleted() {
+    return _completed;
+  }
+
+  int getLevel() {
+    return _level;
+  }
+
   bool isGameOver() {
     return _gameOver;
   }
@@ -81,6 +92,7 @@ class TargetController {
 
     if (_spawnMap != null && _spawnMap.containsKey(_totalTime)) {
       if (_spawnMap[_totalTime][0] == -1) {
+        _completed = true;
         _gameOver = true;
       } else {
         _spawnMap[_totalTime].forEach((location) {

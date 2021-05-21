@@ -9,6 +9,10 @@ import 'package:gameplayground/screens/game_settings.dart';
 import 'package:gameplayground/screens/gameplay_data.dart';
 import 'package:gameplayground/screens/input_timeseries.dart';
 import 'package:provider/provider.dart';
+import 'package:flutter/services.dart' show rootBundle;
+import 'package:gameplayground/models/user.dart';
+
+
 
 import 'calibration.dart';
 
@@ -28,6 +32,7 @@ class _LevelSelectPageState extends State<LevelSelectPage> {
   static final String _heroTagLevel3Button = 'level_three_button';
   static final String _heroTagLevel4Button = 'level_four_button';
   static final String _heroTagLevel5Button = 'level_five_button';
+  User _user;
 
   static final String _connectingToSurfaceEmgMessage =
       'Connecting to Surface EMG.';
@@ -40,12 +45,15 @@ class _LevelSelectPageState extends State<LevelSelectPage> {
       '_LevelSelectPageState_Callback';
 
   BluetoothManager _bluetoothManager;
+  String completionPath = "assets/completion/completions.txt";
   bool _bluetoothManagerIsReadyToProvideValues;
   String _deviceName;
 
   @override
   void initState() {
     super.initState();
+    _user = Provider.of<SessionDataModel>(context, listen: false).getCurrentUser();
+    print(_user);
     _bluetoothManager =
         Provider.of<SessionDataModel>(context, listen: false).bluetoothManager;
     _deviceName = Provider.of<SessionDataModel>(context, listen: false)
@@ -58,6 +66,8 @@ class _LevelSelectPageState extends State<LevelSelectPage> {
         _handleBluetoothManagerIsReadyToProvideValueState);
     _bluetoothManager.connect(ConnectionSpec.fromDeviceName(_deviceName));
   }
+
+
 
   void _handleBluetoothManagerIsReadyToProvideValueState(
       bool isReadyToProvideValues) {
@@ -83,15 +93,15 @@ class _LevelSelectPageState extends State<LevelSelectPage> {
 
     List<Widget> bodyColumnChildren = <Widget>[
       SizedBox(height: 40),
-      _buildPlayGameButton("Level 1", "assets/levels/level1.txt", _heroTagLevel1Button),
+      _buildPlayGameButton(1, "Level 1", "assets/levels/level1.txt", _heroTagLevel1Button),
       SizedBox(height: _betweenButtonSpacing),
-      _buildPlayGameButton("Level 2", "assets/levels/level2.txt", _heroTagLevel2Button),
+      _buildPlayGameButton(2, "Level 2", "assets/levels/level2.txt", _heroTagLevel2Button),
       SizedBox(height: _betweenButtonSpacing),
-      _buildPlayGameButton("Level 3", "assets/levels/level3.txt", _heroTagLevel3Button),
+      _buildPlayGameButton(3, "Level 3", "assets/levels/level3.txt", _heroTagLevel3Button),
       SizedBox(height: _betweenButtonSpacing),
-      _buildPlayGameButton("Level 4", "assets/levels/level4.txt", _heroTagLevel4Button),
+      _buildPlayGameButton(4, "Level 4", "assets/levels/level4.txt", _heroTagLevel4Button),
       SizedBox(height: _betweenButtonSpacing),
-      _buildPlayGameButton("Level 5", "assets/levels/level5.txt", _heroTagLevel5Button),
+      _buildPlayGameButton(5, "Level 5", "assets/levels/level5.txt", _heroTagLevel5Button),
       Expanded(
         child: Container(),
       ),
@@ -127,17 +137,18 @@ class _LevelSelectPageState extends State<LevelSelectPage> {
     );
   }
 
-  FloatingActionButton _buildPlayGameButton(String levelName, String levelPath, String heroTag) {
-    return _buildGameStartingButton(levelName,
+  FloatingActionButton _buildPlayGameButton(int levelNum, String levelName, String levelPath, String heroTag) {
+    return _buildGameStartingButton(levelNum, levelName,
         heroTag, levelPath, /*startPracticeMode=*/ false);
   }
 
 
-  FloatingActionButton _buildGameStartingButton(
+  FloatingActionButton _buildGameStartingButton(int levelNum,
       String label, String heroTag, String levelPath, bool startPracticeMode) {
     return _buildFloatingActionButtonBasedOnState(
       labelString: label,
       heroTag: heroTag,
+      levelNum: levelNum,
       onPressed: () async {
         await _bluetoothManager.startStreamingValues();
         MaterialPageRoute route = MaterialPageRoute(builder: (context) {
@@ -160,13 +171,14 @@ class _LevelSelectPageState extends State<LevelSelectPage> {
   FloatingActionButton _buildFloatingActionButtonBasedOnState(
       {@required String labelString,
         @required String heroTag,
-        @required VoidCallback onPressed}) {
+        @required VoidCallback onPressed,
+        @required int levelNum}) {
 //    print(
 //        'building button: $labelString with state: $_bluetoothManagerIsReadyToProvideValues.');
     VoidCallback onPressedForState;
     final theme = Theme.of(context);
     Color backgroundColor;
-    if (_bluetoothManagerIsReadyToProvideValues) {
+    if (_bluetoothManagerIsReadyToProvideValues && _user.lastLevelCompleted >= levelNum + - 1) {
       onPressedForState = onPressed;
       backgroundColor = theme.colorScheme.primary;
       print('buttonColor: $backgroundColor');
@@ -175,6 +187,7 @@ class _LevelSelectPageState extends State<LevelSelectPage> {
       backgroundColor = Colors.grey[300];
 //      print('disabledColor: $backgroundColor');
     }
+
 
     return FloatingActionButton.extended(
       label: Text(labelString),

@@ -21,12 +21,12 @@ class SurfaceEmgGameDatabase extends ChangeNotifier {
   final String _columnTypeReal = 'REAL';
 
   final int _defaultInitialHighScore = 0;
+  final int _defaultLastLevelCompleted = 0;
 
   Database _database;
 
   Future<void> initialize() async {
     var databasesDirectoryPath = await getDatabasesPath();
-
     // Make sure the directory exists.
     try {
       await Directory(databasesDirectoryPath).create(recursive: true);
@@ -58,6 +58,7 @@ class SurfaceEmgGameDatabase extends ChangeNotifier {
         '(${_DatabaseColumnNames.idColumnName} '
         '$_columnTypeText PRIMARY KEY, '
         '${_DatabaseColumnNames.highScoreColumnName} $_columnTypeInteger, '
+        '${_DatabaseColumnNames.lastLevelCompletedName} $_columnTypeInteger, '
         '${_DatabaseColumnNames.mostRecentActivityTimestampColumnName} '
         '$_columnTypeInteger, '
         '${_DatabaseColumnNames.deviceNameColumnName} '
@@ -125,6 +126,7 @@ class SurfaceEmgGameDatabase extends ChangeNotifier {
     await _database.insert(_userDataDatabaseName, {
       _DatabaseColumnNames.idColumnName: id,
       _DatabaseColumnNames.highScoreColumnName: _defaultInitialHighScore,
+      _DatabaseColumnNames.lastLevelCompletedName: _defaultLastLevelCompleted,
       _DatabaseColumnNames.mostRecentActivityTimestampColumnName:
           DateTime.now().millisecondsSinceEpoch
     });
@@ -155,6 +157,7 @@ class SurfaceEmgGameDatabase extends ChangeNotifier {
     var tableRows = _database.query(_userDataDatabaseName, columns: [
       _DatabaseColumnNames.idColumnName,
       _DatabaseColumnNames.highScoreColumnName,
+      _DatabaseColumnNames.lastLevelCompletedName,
       _DatabaseColumnNames.mostRecentActivityTimestampColumnName,
       _DatabaseColumnNames.deviceNameColumnName
     ]);
@@ -164,6 +167,7 @@ class SurfaceEmgGameDatabase extends ChangeNotifier {
         return User(
             row[_DatabaseColumnNames.idColumnName],
             row[_DatabaseColumnNames.highScoreColumnName],
+            row[_DatabaseColumnNames.lastLevelCompletedName],
             row[_DatabaseColumnNames.mostRecentActivityTimestampColumnName],
             row[_DatabaseColumnNames.deviceNameColumnName]);
       }));
@@ -177,6 +181,7 @@ class SurfaceEmgGameDatabase extends ChangeNotifier {
         await _database.query(_userDataDatabaseName,
             columns: [
               _DatabaseColumnNames.highScoreColumnName,
+              _DatabaseColumnNames.lastLevelCompletedName,
               _DatabaseColumnNames.mostRecentActivityTimestampColumnName,
               _DatabaseColumnNames.deviceNameColumnName
             ],
@@ -189,6 +194,7 @@ class SurfaceEmgGameDatabase extends ChangeNotifier {
     return User(
         id,
         userData[_DatabaseColumnNames.highScoreColumnName],
+        userData[_DatabaseColumnNames.lastLevelCompletedName],
         userData[_DatabaseColumnNames.mostRecentActivityTimestampColumnName],
         userData[_DatabaseColumnNames.deviceNameColumnName]);
   }
@@ -217,6 +223,29 @@ class SurfaceEmgGameDatabase extends ChangeNotifier {
     // Update in the database.
     _database.update(_userDataDatabaseName,
         {_DatabaseColumnNames.highScoreColumnName: score},
+        where: '${_DatabaseColumnNames.idColumnName} = ?', whereArgs: [id]);
+  }
+
+  void updateLastLevel(String id, int level) async {
+    List<Map<String, dynamic>> userLevelData = await _database.query(
+        _userDataDatabaseName,
+        columns: [_DatabaseColumnNames.lastLevelCompletedName],
+        where: '${_DatabaseColumnNames.idColumnName} = ?',
+        whereArgs: [id],
+        limit: 1);
+
+    int userLastLevel =
+    userLevelData.first[_DatabaseColumnNames.lastLevelCompletedName];
+    print('hello bob');
+    print(userLastLevel);
+    print(level);
+    if (level < userLastLevel) {
+      return;
+    }
+
+    // Update in the database.
+    _database.update(_userDataDatabaseName,
+        {_DatabaseColumnNames.lastLevelCompletedName: level},
         where: '${_DatabaseColumnNames.idColumnName} = ?', whereArgs: [id]);
   }
 
@@ -317,6 +346,7 @@ class SurfaceEmgGameDatabase extends ChangeNotifier {
 class _DatabaseColumnNames {
   static const String idColumnName = 'id';
   static const String highScoreColumnName = 'highScore';
+  static const String lastLevelCompletedName = 'lastLevelCompleted';
   static const String mostRecentActivityTimestampColumnName =
       'mostRecentActivityTimestamp';
   static const String timestampMillisecondsSinceEpochColumnName =
