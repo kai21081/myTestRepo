@@ -8,6 +8,8 @@ import 'package:gameplayground/models/game_settings.dart';
 import 'package:gameplayground/models/user.dart';
 import 'package:sqflite/sqflite.dart';
 
+import 'gameplay_data.dart';
+
 // TODO: If the database read is fast enough, don't cache, it's confusing.
 class SurfaceEmgGameDatabase extends ChangeNotifier {
   final String _databaseFilename = 'surface_emg_game.db';
@@ -168,6 +170,21 @@ class SurfaceEmgGameDatabase extends ChangeNotifier {
             row[_DatabaseColumnNames.highScoreColumnName],
             row[_DatabaseColumnNames.mostRecentActivityTimestampColumnName],
             row[_DatabaseColumnNames.deviceNameColumnName]);
+      }));
+    });
+  }
+
+  Future<UnmodifiableListView<GameplayData>> getOneUserData(User user) async {
+    var tableRows = _database.query(_gameplayDataDatabaseName,
+    where: '${_DatabaseColumnNames.gameUserIdColumnName} = ?',
+    whereArgs: [user.id]);
+    return tableRows.then((List<Map<String, dynamic>> tableData) {
+      return UnmodifiableListView(tableData.map((Map<String, dynamic> row) {
+        return GameplayData(
+            row[_DatabaseColumnNames.gameStartTimestampColumnName],
+            row[_DatabaseColumnNames.gameEndTimestampColumnName],
+            row[_DatabaseColumnNames.gameScoreColumnName],
+            row[_DatabaseColumnNames.numFlapsColumnName]);
       }));
     });
   }

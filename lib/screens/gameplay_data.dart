@@ -4,6 +4,7 @@ import 'dart:math';
 
 import 'package:charts_flutter/flutter.dart' as charts;
 import 'package:flutter/material.dart';
+import 'package:gameplayground/models/gameplay_data.dart';
 import 'package:gameplayground/models/session_data.dart';
 import 'package:gameplayground/models/user.dart';
 import 'package:provider/provider.dart';
@@ -48,15 +49,24 @@ class _GameplayDataPageState extends State<GameplayDataPage> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
-            Text(_getUserData(context).toString()),
+            FutureBuilder<UnmodifiableListView<GameplayData>>(
+                future:_getUserData(context),
+                builder: (context,AsyncSnapshot<UnmodifiableListView<GameplayData>> gameplayData) {
+                  if(gameplayData.hasData) {
+                    return Text(gameplayData.data.toString());
+                  } else {
+                    return CircularProgressIndicator();
+                  }
+                }
+            ),
           ],
         ),
       ),
     );
   }
 
-  Future<User> _getUserData(context) {
-    return _getSessionDataModel(context).getUser(_getSessionDataModel(context).currentUserId);
+  Future<UnmodifiableListView<GameplayData>> _getUserData(context) {
+    return _getSessionDataModel(context).getUserGameplayData(_getSessionDataModel(context).currentUser);
   }
 
   SessionDataModel _getSessionDataModel(context) {

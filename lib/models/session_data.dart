@@ -26,6 +26,8 @@ class SessionDataModel extends ChangeNotifier {
 
   SessionDataModel(this._database, this.bluetoothManager);
 
+  User get currentUser => _currentUser;
+
   String get currentUserId => _currentUser.id;
 
   int get currentUserHighScore => _currentUser.highScore;
@@ -76,6 +78,10 @@ class SessionDataModel extends ChangeNotifier {
         await _database.getUserSettings(id));
     _database.updateUserMostRecentActivity(
         id, DateTime.now().millisecondsSinceEpoch);
+  }
+
+  Future<UnmodifiableListView<GameplayData>> getUserGameplayData(User user) async{
+    return _database.getOneUserData(user);
   }
 
   // User must be set.
