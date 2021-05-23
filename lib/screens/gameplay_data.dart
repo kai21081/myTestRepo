@@ -4,7 +4,6 @@ import 'dart:math';
 
 import 'package:charts_flutter/flutter.dart' as charts;
 import 'package:flutter/material.dart';
-import 'package:gameplayground/models/gameplay_data.dart';
 import 'package:gameplayground/models/session_data.dart';
 import 'package:gameplayground/models/user.dart';
 import 'package:provider/provider.dart';
@@ -49,15 +48,15 @@ class _GameplayDataPageState extends State<GameplayDataPage> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
-            FutureBuilder<UnmodifiableListView<GameplayData>>(
-                future:_getUserData(context),
-                builder: (context,AsyncSnapshot<UnmodifiableListView<GameplayData>> gameplayData) {
-                  if(gameplayData.hasData) {
-                    return Text(gameplayData.data.toString());
-                  } else {
-                    return CircularProgressIndicator();
-                  }
+            FutureBuilder<User>(
+              future:_getUserData(context),
+              builder: (context,AsyncSnapshot<User> user) {
+                if(user.hasData) {
+                  return Text(user.data.toString());
+                } else {
+                  return CircularProgressIndicator();
                 }
+              }
             ),
           ],
         ),
@@ -65,8 +64,8 @@ class _GameplayDataPageState extends State<GameplayDataPage> {
     );
   }
 
-  Future<UnmodifiableListView<GameplayData>> _getUserData(context) {
-    return _getSessionDataModel(context).getUserGameplayData(_getSessionDataModel(context).currentUser);
+  Future<User> _getUserData(context) {
+    return _getSessionDataModel(context).getUser(_getSessionDataModel(context).currentUserId);
   }
 
   SessionDataModel _getSessionDataModel(context) {
