@@ -48,7 +48,16 @@ class _GameplayDataPageState extends State<GameplayDataPage> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
-            Text(_getUserData(context).toString()),
+            FutureBuilder<User>(
+              future:_getUserData(context),
+              builder: (context,AsyncSnapshot<User> user) {
+                if(user.hasData) {
+                  return Text(user.data.toString());
+                } else {
+                  return CircularProgressIndicator();
+                }
+              }
+            ),
           ],
         ),
       ),
