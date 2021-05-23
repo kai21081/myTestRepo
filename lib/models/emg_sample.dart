@@ -8,6 +8,8 @@ abstract class EmgSample  implements Comparable<EmgSample>{
   Map<String, dynamic> asMap();
 
   int compareTo(EmgSample other);
+
+
 }
 
 class RawEmgSample extends EmgSample{
