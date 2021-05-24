@@ -102,7 +102,7 @@ class SurfaceEmgGameDatabase extends ChangeNotifier {
         '${_DatabaseColumnNames.gameEndTimestampColumnName} '
         '$_columnTypeInteger, '
         '${_DatabaseColumnNames.gameUserIdColumnName} $_columnTypeText, '
-        '${_DatabaseColumnNames.gameScoreColumnName} $_columnTypeInteger)'
+        '${_DatabaseColumnNames.gameScoreColumnName} $_columnTypeInteger'
         '${_DatabaseColumnNames.numFlapsColumnName} $_columnTypeInteger)');
   }
 
