@@ -96,10 +96,10 @@ class FlappyGame extends Game with HasWidgetsOverlay {
     }
 
     _isGameOver = false;
-
+/*
     _dataProcessor.startProcessing((_) {
       _birdController.onTapDown();
-    }, logData: true);
+    }, logData: true);*/
   }
 
   void _createSkyBackgroundController() {
@@ -244,6 +244,7 @@ class FlappyGame extends Game with HasWidgetsOverlay {
     });
     _birdController.killBird();
     _highScore = max(_highScore, _currentScore);
+
     _stopMusic();
     _showGameOverMenu(handleGameplayDataFuture);
   }
@@ -276,11 +277,17 @@ class FlappyGame extends Game with HasWidgetsOverlay {
                         fontSize: 20,
                         decoration: TextDecoration.none)),
                   SizedBox(height: 20),
+                  Text('High Score for the Day:',
+                      style: TextStyle(
+                          color: Colors.black,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 20,
+                          decoration: TextDecoration.none)),
                   FloatingActionButton.extended(
                     label: Text(_labelMainMenu),
                     heroTag: _heroTagMainMenuButton,
                     onPressed: () {
-                      Navigator.pop(this._context);
+                      Navigator.pop(this._context, true);
                     },
                   )
                 ],
@@ -305,9 +312,17 @@ class FlappyGame extends Game with HasWidgetsOverlay {
                   fontSize: 54,
                   decoration: TextDecoration.none))),
     ];
-    if (!_practiceMode) {
+    if (_currentScore > _highScore) {
       highScoreComponents.add(Center(
-          child: Text('High Score: $_highScore',
+          child: Text('New High Score!',
+              style: TextStyle(
+                  color: Colors.black,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 24,
+                  decoration: TextDecoration.none))));
+    } else {
+      highScoreComponents.add(Center(
+          child: Text('High Score $_highScore',
               style: TextStyle(
                   color: Colors.black,
                   fontWeight: FontWeight.bold,

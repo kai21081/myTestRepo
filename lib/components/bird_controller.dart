@@ -17,7 +17,6 @@ class BirdController {
   BirdController(GameSettings gameSettings) : _gameSettings = gameSettings;
 
   void initialize(Size screenSize) {
-    print('yellow');
     resizeScreen(screenSize);
     double birdSideLength = _birdSizeAsFractionScreenWidth * _screenSize.width;
     Rect initialBirdPosition = Rect.fromLTWH(

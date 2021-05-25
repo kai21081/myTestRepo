@@ -45,7 +45,6 @@ class _LevelSelectPageState extends State<LevelSelectPage> {
       '_LevelSelectPageState_Callback';
 
   BluetoothManager _bluetoothManager;
-  String completionPath = "assets/completion/completions.txt";
   bool _bluetoothManagerIsReadyToProvideValues;
   String _deviceName;
 
@@ -53,7 +52,7 @@ class _LevelSelectPageState extends State<LevelSelectPage> {
   void initState() {
     super.initState();
     _user = Provider.of<SessionDataModel>(context, listen: false).getCurrentUser();
-    print(_user);
+    print(_user.mostRecentActivityTimestamp);
     _bluetoothManager =
         Provider.of<SessionDataModel>(context, listen: false).bluetoothManager;
     _deviceName = Provider.of<SessionDataModel>(context, listen: false)
@@ -139,7 +138,7 @@ class _LevelSelectPageState extends State<LevelSelectPage> {
 
   FloatingActionButton _buildPlayGameButton(int levelNum, String levelName, String levelPath, String heroTag) {
     return _buildGameStartingButton(levelNum, levelName,
-        heroTag, levelPath, /*startPracticeMode=*/ false);
+        heroTag, levelPath, /*startPracticeMode=*/ true);
   }
 
 
@@ -161,7 +160,9 @@ class _LevelSelectPageState extends State<LevelSelectPage> {
           return game.widget;
         });
         route.popped.then((_) {
+          _user = Provider.of<SessionDataModel>(context, listen: false).getCurrentUser();
           _bluetoothManager.stopStreamingValues();
+
         });
         Navigator.push(context, route);
       },
