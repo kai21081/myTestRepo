@@ -235,7 +235,7 @@ class FlappyGame extends Game with HasWidgetsOverlay {
     }
     EmgRecording emgRecording = _dataProcessor.dataLog;
     GameplayData gameplayData = GameplayData(_gameStartMillisecondsSinceEpoch,
-        gameEndMillisecondsSinceEpoch, _currentScore, _birdController.getFlaps());
+        gameEndMillisecondsSinceEpoch, _currentScore, _birdController.numFlaps);
     Future<void> handleGameplayDataFuture = _getSessionDataModel()
         .handleGameplayData(gameplayData, _gameSettings, emgRecording)
         .then((_) {
@@ -269,7 +269,7 @@ class FlappyGame extends Game with HasWidgetsOverlay {
                     },
                   ),
                   SizedBox(height: 20),
-                  Text('Number of Flaps:' + _birdController.getFlaps().toString(),
+                  Text('Number of Flaps:' + _birdController.numFlaps.toString(),
                       style: TextStyle(
                         color: Colors.black,
                         fontWeight: FontWeight.bold,
