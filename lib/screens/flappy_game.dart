@@ -69,7 +69,6 @@ class FlappyGame extends Game with HasWidgetsOverlay {
   }
 
   void _initialize() async {
-    _getSessionDataModel().getUserScoresToday();
     if (_gameSettings.playMusic) {
       _startMusic();
     }
