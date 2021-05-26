@@ -58,7 +58,7 @@ class FlappyGame extends Game with HasWidgetsOverlay {
     _gameSettings = _getSessionDataModel().gameSettings;
     _practiceMode = practiceMode;
     _levelPath = levelPath;
-    _screenSize = Size(392.7, 807.3); // Just broke? does not appear in game settings
+    _screenSize = MediaQuery.of(_context).size;
     _initialize();
   }
 
@@ -69,6 +69,7 @@ class FlappyGame extends Game with HasWidgetsOverlay {
   }
 
   void _initialize() async {
+    _getSessionDataModel().getUserScoresToday();
     if (_gameSettings.playMusic) {
       _startMusic();
     }
@@ -233,7 +234,6 @@ class FlappyGame extends Game with HasWidgetsOverlay {
     if (_targetController.isCompleted()) {
       session.handleLevelProg(session.getCurrentUser().id, _targetController.getLevel());
     }
-    print(session.getCurrentUser());
     EmgRecording emgRecording = _dataProcessor.dataLog;
     GameplayData gameplayData = GameplayData(_gameStartMillisecondsSinceEpoch,
         gameEndMillisecondsSinceEpoch, _currentScore, _birdController.getFlaps());

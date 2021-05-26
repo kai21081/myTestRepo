@@ -236,9 +236,6 @@ class SurfaceEmgGameDatabase extends ChangeNotifier {
 
     int userLastLevel =
     userLevelData.first[_DatabaseColumnNames.lastLevelCompletedName];
-    print('hello bob');
-    print(userLastLevel);
-    print(level);
     if (level < userLastLevel) {
       return;
     }
@@ -310,6 +307,7 @@ class SurfaceEmgGameDatabase extends ChangeNotifier {
         tableRows.last[
             _DatabaseColumnNames.timestampMillisecondsSinceEpochColumnName]);
   }
+
 
   Future<UserModifiableSettings> getUserSettings(String userId) async {
     var tableRows = await _database.query(_userDataDatabaseName,

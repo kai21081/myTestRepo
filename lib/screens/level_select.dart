@@ -52,7 +52,6 @@ class _LevelSelectPageState extends State<LevelSelectPage> {
   void initState() {
     super.initState();
     _user = Provider.of<SessionDataModel>(context, listen: false).getCurrentUser();
-    print(_user.mostRecentActivityTimestamp);
     _bluetoothManager =
         Provider.of<SessionDataModel>(context, listen: false).bluetoothManager;
     _deviceName = Provider.of<SessionDataModel>(context, listen: false)
@@ -160,7 +159,9 @@ class _LevelSelectPageState extends State<LevelSelectPage> {
           return game.widget;
         });
         route.popped.then((_) {
-          _user = Provider.of<SessionDataModel>(context, listen: false).getCurrentUser();
+          setState(() {
+            _user = Provider.of<SessionDataModel>(context, listen: false).getCurrentUser();
+          });
           _bluetoothManager.stopStreamingValues();
 
         });
@@ -179,7 +180,7 @@ class _LevelSelectPageState extends State<LevelSelectPage> {
     VoidCallback onPressedForState;
     final theme = Theme.of(context);
     Color backgroundColor;
-    if (_bluetoothManagerIsReadyToProvideValues && _user.lastLevelCompleted >= levelNum + - 1) {
+    if (_bluetoothManagerIsReadyToProvideValues && _user.lastLevelCompleted >= levelNum - 1) {
       onPressedForState = onPressed;
       backgroundColor = theme.colorScheme.primary;
       print('buttonColor: $backgroundColor');
