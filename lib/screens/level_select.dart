@@ -127,12 +127,10 @@ class _LevelSelectPageState extends State<LevelSelectPage> {
         }),
       ),
       body: Center(
-        child: SingleChildScrollView(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: bodyColumnChildren,
           ),
-        )
       ),
     );
   }
