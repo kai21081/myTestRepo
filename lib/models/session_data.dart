@@ -50,6 +50,10 @@ class SessionDataModel extends ChangeNotifier {
     return _database.getUserWithId(id);
   }
 
+  User getCurrentUser() {
+    return _currentUser;
+  }
+
   // Checks if user already exists with same ID. Returns false if exists.
   Future<bool> canAddUser(User user) async {
     return _database.containsUserWithId(user.id).then((value) => !value);
@@ -125,6 +129,10 @@ class SessionDataModel extends ChangeNotifier {
 
   Future<UserCalibrationData> getMostRecentCurrentUserCalibrationValue() async {
     return _database.getMostRecentUserCalibrationValue(currentUserId);
+  }
+
+  void handleLevelProg(String id, int level) {
+    _database.updateLastLevel(id, level);
   }
 
   Future<void> handleCalibrationData(int value) {

@@ -18,12 +18,15 @@ class TargetController {
   int _totalTime = 0;
   String _targetImageName;
   Rect _targetRegionForCollision;
+  bool _gameOver = false;
+  bool _completed = false;
   Map<int, List<double>> _spawnMap;
   double _targetWidthAsScreenWidthFraction;
   double _targetHeightAsScreenWidthFraction;
   File _spawnConfig;
   double _spawnMinHeightAsScreenHeightFraction;
   double _spawnMaxHeightAsScreenHeightFraction;
+  int _level;
 
   TargetController(
       double velocityInScreenWidthsPerSecond,
@@ -34,7 +37,7 @@ class TargetController {
       double spawnMinHeightAsScreenHeightFraction,
       double spawnMaxHeightAsScreenHeightFraction,
       double spawnFrequencyHertz,
-      //String levelPath
+      String levelPath
       ) {
     _targets = List<HorizontallyMovingSprite>();
     _velocityInScreenWidthsPerSecond = velocityInScreenWidthsPerSecond;
@@ -47,7 +50,8 @@ class TargetController {
     _spawnMaxHeightAsScreenHeightFraction =
         spawnMaxHeightAsScreenHeightFraction;
     _spawnFrequencyHertz = spawnFrequencyHertz;
-    _parseSpawnMapFromFile('assets/levels/level1.txt'); //levelPath
+    _parseSpawnMapFromFile(levelPath);
+    _level = int.parse(levelPath.substring(levelPath.length - 5, levelPath.length - 4));
   }
 
   // Removes targets with collision and returns collision count (i.e. points
@@ -66,6 +70,18 @@ class TargetController {
         .forEach((HorizontallyMovingSprite target) => target.render(canvas));
   }
 
+  bool isCompleted() {
+    return _completed;
+  }
+
+  int getLevel() {
+    return _level;
+  }
+
+  bool isGameOver() {
+    return _gameOver;
+  }
+
   void update(double time) {
     if (!_isInitialized) {
       return;
@@ -75,9 +91,14 @@ class TargetController {
     _timeSinceLastSpawn += time;
 
     if (_spawnMap != null && _spawnMap.containsKey(_totalTime)) {
-      _spawnMap[_totalTime].forEach((location) {
-        _spawnTargetAtLocation(location);
-      });
+      if (_spawnMap[_totalTime][0] == -1) {
+        _completed = true;
+        _gameOver = true;
+      } else {
+        _spawnMap[_totalTime].forEach((location) {
+          _spawnTargetAtLocation(location);
+        });
+      }
     }
   }
 

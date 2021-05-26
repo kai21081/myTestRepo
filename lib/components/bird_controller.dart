@@ -12,6 +12,9 @@ class BirdController {
   Bird _bird;
   bool _isInitialized = false;
   Size _screenSize;
+  int _numFlaps = 0;
+
+  int get numFlaps => _numFlaps;
 
   BirdController(GameSettings gameSettings) : _gameSettings = gameSettings;
 
@@ -45,6 +48,7 @@ class BirdController {
 
   void onTapDown() {
     if (_isInitialized) {
+      _numFlaps++;
       _bird.onTapDown();
     }
   }

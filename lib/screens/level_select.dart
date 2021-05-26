@@ -8,32 +8,31 @@ import 'package:gameplayground/models/thresholded_trigger_data_processor.dart';
 import 'package:gameplayground/screens/game_settings.dart';
 import 'package:gameplayground/screens/gameplay_data.dart';
 import 'package:gameplayground/screens/input_timeseries.dart';
-import 'package:gameplayground/screens/level_select.dart';
 import 'package:provider/provider.dart';
+import 'package:flutter/services.dart' show rootBundle;
+import 'package:gameplayground/models/user.dart';
+
+
 
 import 'calibration.dart';
 
-class MainMenuPage extends StatefulWidget {
+class LevelSelectPage extends StatefulWidget {
   final String title;
 
-  MainMenuPage({Key key, this.title}) : super(key: key);
+  LevelSelectPage({Key key, this.title}) : super(key: key);
 
   @override
-  _MainMenuPageState createState() => _MainMenuPageState();
+  _LevelSelectPageState createState() => _LevelSelectPageState();
 }
 
-class _MainMenuPageState extends State<MainMenuPage> {
-  static final String _labelLevelSelectButton = 'Play Game';
-  static final String _labelGameSettingsButton = 'Game Settings';
-  static final String _labelCalibrateButton = 'Calibrate';
-  static final String _labelDisplayInputButton = 'Display Input';
-  static final String _labelGameplayDataButton = 'Gameplay Data';
+class _LevelSelectPageState extends State<LevelSelectPage> {
 
-  static final String _heroTagLevelSelectButton = 'play_game_button';
-  static final String _heroTagGameSettingsButton = 'game_settings_button';
-  static final String _heroTagCalibrateButton = 'calibrate_button';
-  static final String _heroTagDisplayInputButton = 'display_input_button';
-  static final String _heroTagGameplayDataButton = 'gameplay_data';
+  static final String _heroTagLevel1Button = 'level_one_button';
+  static final String _heroTagLevel2Button = 'level_two_button';
+  static final String _heroTagLevel3Button = 'level_three_button';
+  static final String _heroTagLevel4Button = 'level_four_button';
+  static final String _heroTagLevel5Button = 'level_five_button';
+  User _user;
 
   static final String _connectingToSurfaceEmgMessage =
       'Connecting to Surface EMG.';
@@ -43,7 +42,7 @@ class _MainMenuPageState extends State<MainMenuPage> {
   static final double _betweenButtonSpacing = 20;
 
   static final String _callbackNameNotifyIsReadyToProvideValuesState =
-      '_MainMenuPageState_Callback';
+      '_LevelSelectPageState_Callback';
 
   BluetoothManager _bluetoothManager;
   bool _bluetoothManagerIsReadyToProvideValues;
@@ -52,6 +51,7 @@ class _MainMenuPageState extends State<MainMenuPage> {
   @override
   void initState() {
     super.initState();
+    _user = Provider.of<SessionDataModel>(context, listen: false).getCurrentUser();
     _bluetoothManager =
         Provider.of<SessionDataModel>(context, listen: false).bluetoothManager;
     _deviceName = Provider.of<SessionDataModel>(context, listen: false)
@@ -64,6 +64,8 @@ class _MainMenuPageState extends State<MainMenuPage> {
         _handleBluetoothManagerIsReadyToProvideValueState);
     _bluetoothManager.connect(ConnectionSpec.fromDeviceName(_deviceName));
   }
+
+
 
   void _handleBluetoothManagerIsReadyToProvideValueState(
       bool isReadyToProvideValues) {
@@ -89,22 +91,22 @@ class _MainMenuPageState extends State<MainMenuPage> {
 
     List<Widget> bodyColumnChildren = <Widget>[
       SizedBox(height: 40),
-      _buildLevelSelectButton(),
+      _buildPlayGameButton(1, "Level 1", "assets/levels/level1.txt", _heroTagLevel1Button),
       SizedBox(height: _betweenButtonSpacing),
-      _buildGameSettingsButton(),
+      _buildPlayGameButton(2, "Level 2", "assets/levels/level2.txt", _heroTagLevel2Button),
       SizedBox(height: _betweenButtonSpacing),
-      _buildCalibrateButton(),
+      _buildPlayGameButton(3, "Level 3", "assets/levels/level3.txt", _heroTagLevel3Button),
       SizedBox(height: _betweenButtonSpacing),
-      _buildDisplayInputButton(),
+      _buildPlayGameButton(4, "Level 4", "assets/levels/level4.txt", _heroTagLevel4Button),
       SizedBox(height: _betweenButtonSpacing),
-      _buildGameplayDataButton(),
+      _buildPlayGameButton(5, "Level 5", "assets/levels/level5.txt", _heroTagLevel5Button),
       Expanded(
         child: Container(),
       ),
       SizedBox(
         height: 40,
         child:
-            Row(mainAxisAlignment: MainAxisAlignment.center, children: <Widget>[
+        Row(mainAxisAlignment: MainAxisAlignment.center, children: <Widget>[
           SizedBox(width: 20),
           SizedBox(height: 30, width: 30, child: connectionWidget),
           SizedBox(width: 20),
@@ -115,7 +117,7 @@ class _MainMenuPageState extends State<MainMenuPage> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('Welcome, $currentUserId!'),
+        title: Text('Select a level!'),
         centerTitle: true,
         leading: BackButton(onPressed: () async {
           _bluetoothManager.removeNotifyIsReadyToProvideValuesStateCallback(
@@ -125,86 +127,60 @@ class _MainMenuPageState extends State<MainMenuPage> {
         }),
       ),
       body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: bodyColumnChildren,
-        ),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: bodyColumnChildren,
+          ),
       ),
     );
   }
 
-  FloatingActionButton _buildLevelSelectButton() {
-    return _buildFloatingActionButtonBasedOnState(
-      labelString: _labelLevelSelectButton,
-      heroTag: _heroTagLevelSelectButton,
-      onPressed: () {
-        Navigator.push(context,
-            MaterialPageRoute(builder: (context) => LevelSelectPage()));
-      },
-    );
+  FloatingActionButton _buildPlayGameButton(int levelNum, String levelName, String levelPath, String heroTag) {
+    return _buildGameStartingButton(levelNum, levelName,
+        heroTag, levelPath, /*startPracticeMode=*/ true);
   }
 
 
-  FloatingActionButton _buildGameSettingsButton() {
+  FloatingActionButton _buildGameStartingButton(int levelNum,
+      String label, String heroTag, String levelPath, bool startPracticeMode) {
     return _buildFloatingActionButtonBasedOnState(
-      labelString: _labelGameSettingsButton,
-      heroTag: _heroTagGameSettingsButton,
-      onPressed: () {
-        Navigator.push(context,
-            MaterialPageRoute(builder: (context) => GameSettingsPage()));
-      },
-    );
-  }
-
-  FloatingActionButton _buildCalibrateButton() {
-    return _buildFloatingActionButtonBasedOnState(
-      labelString: _labelCalibrateButton,
-      heroTag: _heroTagCalibrateButton,
-      onPressed: () {
-        Navigator.push(context,
-            MaterialPageRoute(builder: (context) => CalibrationPage()));
-      },
-    );
-  }
-
-  FloatingActionButton _buildDisplayInputButton() {
-    return _buildFloatingActionButtonBasedOnState(
-      labelString: _labelDisplayInputButton,
-      heroTag: _heroTagDisplayInputButton,
+      labelString: label,
+      heroTag: heroTag,
+      levelNum: levelNum,
       onPressed: () async {
-        print('Display Input button pushed.');
         await _bluetoothManager.startStreamingValues();
-        MaterialPageRoute route =
-            MaterialPageRoute(builder: (context) => InputTimeseriesPage());
+        MaterialPageRoute route = MaterialPageRoute(builder: (context) {
+          FlappyGame game = FlappyGame(
+              context, ThresholdedTriggerDataProcessor(_bluetoothManager),
+              levelPath, practiceMode: startPracticeMode);
+          TapGestureRecognizer tapper = TapGestureRecognizer();
+          tapper.onTapDown = game.onTapDown;
+          Util().addGestureRecognizer(tapper);
+          return game.widget;
+        });
         route.popped.then((_) {
+          setState(() {
+            _user = Provider.of<SessionDataModel>(context, listen: false).getCurrentUser();
+          });
           _bluetoothManager.stopStreamingValues();
+
         });
         Navigator.push(context, route);
       },
     );
   }
 
-  FloatingActionButton _buildGameplayDataButton() {
-    return _buildFloatingActionButtonBasedOnState(
-      labelString: _labelGameplayDataButton,
-      heroTag: _heroTagGameplayDataButton,
-      onPressed: () {
-        Navigator.push(context,
-            MaterialPageRoute(builder: (context) => GameplayDataPage()));
-      },
-    );
-  }
-
   FloatingActionButton _buildFloatingActionButtonBasedOnState(
       {@required String labelString,
-      @required String heroTag,
-      @required VoidCallback onPressed}) {
+        @required String heroTag,
+        @required VoidCallback onPressed,
+        @required int levelNum}) {
 //    print(
 //        'building button: $labelString with state: $_bluetoothManagerIsReadyToProvideValues.');
     VoidCallback onPressedForState;
     final theme = Theme.of(context);
     Color backgroundColor;
-    if (_bluetoothManagerIsReadyToProvideValues) {
+    if (_bluetoothManagerIsReadyToProvideValues && _user.lastLevelCompleted >= levelNum - 1) {
       onPressedForState = onPressed;
       backgroundColor = theme.colorScheme.primary;
       print('buttonColor: $backgroundColor');
@@ -213,6 +189,7 @@ class _MainMenuPageState extends State<MainMenuPage> {
       backgroundColor = Colors.grey[300];
 //      print('disabledColor: $backgroundColor');
     }
+
 
     return FloatingActionButton.extended(
       label: Text(labelString),

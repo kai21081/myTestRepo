@@ -1,6 +1,9 @@
 import 'dart:collection';
 import 'dart:math';
 import 'dart:ui';
+import 'dart:io';
+import 'package:path/path.dart' as path;
+import 'package:flutter/material.dart';
 
 import 'package:flame/flame.dart';
 import 'package:flame/game.dart';
@@ -16,6 +19,7 @@ import 'package:gameplayground/models/gameplay_data.dart';
 import 'package:gameplayground/models/session_data.dart';
 import 'package:gameplayground/models/thresholded_trigger_data_processor.dart';
 import 'package:provider/provider.dart';
+import 'package:flutter/services.dart' show rootBundle;
 
 import '../models/game_settings.dart';
 
@@ -33,8 +37,9 @@ class FlappyGame extends Game with HasWidgetsOverlay {
   int _highScore;
   int _gameStartMillisecondsSinceEpoch;
   bool _isGameOver = false;
+  bool _isLevelCompleted = false;
   bool _practiceMode;
-
+  String _levelPath;
   ThresholdedTriggerDataProcessor _dataProcessor;
 
   final String _gameOverMenuOverlayName = 'game_over_menu';
@@ -49,9 +54,11 @@ class FlappyGame extends Game with HasWidgetsOverlay {
   final String _heroTagMainMenuButton = 'main_menu_button';
   final String _heroTagEndGameButton = 'end_game_button';
 
-  FlappyGame(this._context, this._dataProcessor, {practiceMode: false}) {
+  FlappyGame(this._context, this._dataProcessor, String levelPath, {practiceMode: true}) {
     _gameSettings = _getSessionDataModel().gameSettings;
     _practiceMode = practiceMode;
+    _levelPath = levelPath;
+    _screenSize = MediaQuery.of(_context).size;
     _initialize();
   }
 
@@ -65,25 +72,20 @@ class FlappyGame extends Game with HasWidgetsOverlay {
     if (_gameSettings.playMusic) {
       _startMusic();
     }
-
     _highScore = _getSessionDataModel().currentUserHighScore;
 
     _birdController = BirdController(_gameSettings);
     _createSkyBackgroundController();
     _createGrassBackgroundController();
-
     if (_gameSettings.includeCherries) {
       _createCherryTargetController();
     }
-
     if (_gameSettings.includeColumns) {
       _createColumnTargetController();
     }
-
     resize(await Flame.util.initialDimensions());
     _callFunctionOnControllers(
         (controller) => controller.initialize(_screenSize));
-
     // Add score counter.
     _currentScore = 0;
     _gameStartMillisecondsSinceEpoch = DateTime.now().millisecondsSinceEpoch;
@@ -94,10 +96,10 @@ class FlappyGame extends Game with HasWidgetsOverlay {
     }
 
     _isGameOver = false;
-
+/*
     _dataProcessor.startProcessing((_) {
       _birdController.onTapDown();
-    }, logData: true);
+    }, logData: true);*/
   }
 
   void _createSkyBackgroundController() {
@@ -140,7 +142,7 @@ class FlappyGame extends Game with HasWidgetsOverlay {
         _gameSettings.cherryHeightAsScreenWidthFraction,
         _gameSettings.cherryLocationMinBoundFromScreenTop,
         _gameSettings.cherryLocationMaxBoundFromScreenTop,
-        _gameSettings.cherrySpawnRatePerSecond);
+        _gameSettings.cherrySpawnRatePerSecond, _levelPath);
   }
 
   void _createColumnTargetController() {
@@ -170,13 +172,10 @@ class FlappyGame extends Game with HasWidgetsOverlay {
     if (_gameSettings.includeColumns) {
       function(_columnObstacleController);
     }
-
     function(_grassBackgroundController);
-
     if (_gameSettings.includeCherries) {
       function(_targetController);
     }
-
     function(_birdController);
   }
 
@@ -187,11 +186,10 @@ class FlappyGame extends Game with HasWidgetsOverlay {
 
   @override
   void resize(Size size) {
-    _screenSize = size;
     super.resize(size);
 
     _callFunctionOnControllers(
-        (controller) => controller.resizeScreen(_screenSize));
+        (controller) => controller.resizeScreen(size));
   }
 
   @override
@@ -199,7 +197,6 @@ class FlappyGame extends Game with HasWidgetsOverlay {
     if (_isGameOver) {
       return;
     }
-
     _callFunctionOnControllers((controller) => controller.update(time));
 
     bool columnCollisionDetected = _gameSettings.includeColumns
@@ -218,8 +215,12 @@ class FlappyGame extends Game with HasWidgetsOverlay {
     _updateScoreCounter();
 
     // If a collision is detected (and it is not in practice mode), end game.
-    if (!_practiceMode &&
-        (gameEndingGroundCollisionDetected || columnCollisionDetected)) {
+    if ((!_practiceMode &&
+        (gameEndingGroundCollisionDetected || columnCollisionDetected)) ||
+        _targetController.isGameOver()) {
+      if (_targetController.isCompleted()) {
+        _isLevelCompleted = true;
+      }
       _endGame();
     }
   }
@@ -228,18 +229,21 @@ class FlappyGame extends Game with HasWidgetsOverlay {
     _dataProcessor.stopProcessing();
     int gameEndMillisecondsSinceEpoch = DateTime.now().millisecondsSinceEpoch;
     _isGameOver = true;
-
+    SessionDataModel session = _getSessionDataModel();
+    if (_targetController.isCompleted()) {
+      session.handleLevelProg(session.getCurrentUser().id, _targetController.getLevel());
+    }
     EmgRecording emgRecording = _dataProcessor.dataLog;
     GameplayData gameplayData = GameplayData(_gameStartMillisecondsSinceEpoch,
-        gameEndMillisecondsSinceEpoch, _currentScore);
+        gameEndMillisecondsSinceEpoch, _currentScore, _birdController.numFlaps);
     Future<void> handleGameplayDataFuture = _getSessionDataModel()
         .handleGameplayData(gameplayData, _gameSettings, emgRecording)
         .then((_) {
       _dataProcessor.resetDataLog();
     });
-
     _birdController.killBird();
     _highScore = max(_highScore, _currentScore);
+
     _stopMusic();
     _showGameOverMenu(handleGameplayDataFuture);
   }
@@ -265,11 +269,24 @@ class FlappyGame extends Game with HasWidgetsOverlay {
                     },
                   ),
                   SizedBox(height: 20),
+                  Text('Number of Flaps:' + _birdController.numFlaps.toString(),
+                      style: TextStyle(
+                        color: Colors.black,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 20,
+                        decoration: TextDecoration.none)),
+                  SizedBox(height: 20),
+                  Text('High Score for the Day:',
+                      style: TextStyle(
+                          color: Colors.black,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 20,
+                          decoration: TextDecoration.none)),
                   FloatingActionButton.extended(
                     label: Text(_labelMainMenu),
                     heroTag: _heroTagMainMenuButton,
                     onPressed: () {
-                      Navigator.pop(this._context);
+                      Navigator.pop(this._context, true);
                     },
                   )
                 ],
@@ -294,9 +311,17 @@ class FlappyGame extends Game with HasWidgetsOverlay {
                   fontSize: 54,
                   decoration: TextDecoration.none))),
     ];
-    if (!_practiceMode) {
+    if (_currentScore > _highScore) {
       highScoreComponents.add(Center(
-          child: Text('High Score: $_highScore',
+          child: Text('New High Score!',
+              style: TextStyle(
+                  color: Colors.black,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 24,
+                  decoration: TextDecoration.none))));
+    } else {
+      highScoreComponents.add(Center(
+          child: Text('High Score $_highScore',
               style: TextStyle(
                   color: Colors.black,
                   fontWeight: FontWeight.bold,

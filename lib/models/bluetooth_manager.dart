@@ -11,7 +11,7 @@ import 'emg_sample.dart';
 class BluetoothManager {
   static const int scanTimeoutMilliseconds = 15000;
   static const int betweenScanIntervalMilliseconds = 5000;
-  static const int connectTimeoutMilliseconds = 20000;
+  static const int connectTimeoutMilliseconds = 10000;
   static const String handleEmgVoltageCallbackName =
       'BluetoothManager.handleEmgVoltageCallback';
 
@@ -67,7 +67,6 @@ class BluetoothManager {
     print('_connectionSpec: $_connectionSpec');
     print('_canStartConnecting: $_canStartConnecting');
     print('_scanningState: $_scanningState');
-    print('_scanResult is null: ${_scanResult == null}');
     print('_connectingState: $_connectingState');
     print('********** ************ *********\n\n');
 
@@ -303,8 +302,6 @@ class BluetoothManager {
   void _connectToDeviceIfNotAlreadyConnecting() {
     // If already connecting or in process of disconnecting, do nothing and
     // return.
-    print(
-        'in _connectToDeviceIfNotAlreadyConnecting with _connectingState of $_connectingState');
     if (_connectingState != ConnectingState.not_connecting_or_disconnecting) {
       return;
     }
@@ -321,8 +318,6 @@ class BluetoothManager {
       // Did not time out. Confirm that a disconnect hasn't been initiated
       // elsewhere.
       if (_connectingState != ConnectingState.connecting) {
-        print(
-            'in _connectToDeviceIfNotAlreadyConnecting, but exiting because _connectingState = $_connectingState');
         return;
       }
 
@@ -332,10 +327,7 @@ class BluetoothManager {
       _handleGlobalState(
           callOrigin:
               '_connectToDeviceIfNotAlreadyConnecting -> _device.connect().then()');
-    }).catchError((e) {
-      print('Error caught in _connectToDeviceIfNotAlreadyConnecting:');
-      print('${e.message}');
-      print('Connection timeout???');
+    }).catchError((_) {
       // Timed out. Disconnect.
       _disconnect();
     });
@@ -350,9 +342,6 @@ class BluetoothManager {
     _connectingState = ConnectingState.disconnecting;
     await _deviceStateStreamSubscription.cancel();
     await _device.disconnect();
-
-    // TEST!!!!
-    _device = null;
 
     // Update states to reflect disconnect.
     _deviceState = BluetoothDeviceState.disconnected;
@@ -453,10 +442,6 @@ class BluetoothManager {
 
   Future<void> stopStreamingValues() {
     return _surfaceEmgService.setShouldStreamValuesCharacteristicValue(false);
-  }
-
-  Future<void> setGain(int gain) {
-    _surfaceEmgService.setGain(gain);
   }
 
   void reset() {

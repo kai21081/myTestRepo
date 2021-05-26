@@ -17,8 +17,8 @@ void main() async {
   flameUtil.setOrientation(DeviceOrientation.portraitUp);
   loadAssets();
 
-  BluetoothManager bluetoothManager = BluetoothManager();
-//  BluetoothManager bluetoothManager = DebugBluetoothManager();
+//  BluetoothManager bluetoothManager = BluetoothManager();
+  BluetoothManager bluetoothManager = DebugBluetoothManager();
 
   SurfaceEmgGameDatabase database = SurfaceEmgGameDatabase();
   await database.initialize();

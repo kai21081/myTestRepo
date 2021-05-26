@@ -26,7 +26,6 @@ class Bird {
 
   double _velocity = 0.0;
   double _acceleration = 0.0;
-
   bool _isDead = false;
 
   Bird(
@@ -45,6 +44,8 @@ class Bird {
     _wingDownSprite = Sprite('birds/bird_wing_down.png');
     _wingUpSprite = Sprite('birds/bird_wing_up.png');
   }
+
+
 
   void render(Canvas canvas) {
     if (_isDead) {

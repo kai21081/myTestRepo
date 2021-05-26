@@ -33,7 +33,6 @@ class SurfaceEmgService {
   SampleRateCharacteristic _sampleRateCharacteristic;
   ConnectionModeAuthenticationCharacteristic
       _connectionModeAuthenticationCharacteristic;
-  GainControlCharacteristic _gainControlCharacteristic;
 
   SurfaceEmgService(this._service) {
     _emgVoltageCharacteristic = EmgVoltageCharacteristic(
@@ -52,9 +51,6 @@ class SurfaceEmgService {
         ConnectionModeAuthenticationCharacteristic(_getCharacteristicByGuid(
             this._service,
             SurfaceEmgGuids.connectionModeAuthenticationCharacteristic()));
-    _gainControlCharacteristic = GainControlCharacteristic(
-        _getCharacteristicByGuid(
-            this._service, SurfaceEmgGuids.emgGainControlCharacteristic()));
   }
 
   ReadOnlySurfaceEmgCharacteristic _getReadOnlyCharacteristic(
@@ -108,9 +104,5 @@ class SurfaceEmgService {
       String value) {
     print('setConnectionModeAuthenticationCharacteristicValue');
     return _connectionModeAuthenticationCharacteristic.writeValue(value);
-  }
-
-  Future<void> setGain(int gain) {
-    return _gainControlCharacteristic.writeValue(gain);
   }
 }
