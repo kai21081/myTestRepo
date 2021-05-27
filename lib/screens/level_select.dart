@@ -32,6 +32,11 @@ class _LevelSelectPageState extends State<LevelSelectPage> {
   static final String _heroTagLevel3Button = 'level_three_button';
   static final String _heroTagLevel4Button = 'level_four_button';
   static final String _heroTagLevel5Button = 'level_five_button';
+  static final String _heroTagLevel6Button = 'level_six_button';
+  static final String _heroTagLevel7Button = 'level_seven_button';
+  static final String _heroTagLevel8Button = 'level_eight_button';
+  static final String _heroTagLevel9Button = 'level_nine_button';
+  static final String _heroTagLevel10Button = 'level_ten_button';
   User _user;
 
   static final String _connectingToSurfaceEmgMessage =
@@ -100,6 +105,17 @@ class _LevelSelectPageState extends State<LevelSelectPage> {
       _buildPlayGameButton(4, "Level 4", "assets/levels/level4.txt", _heroTagLevel4Button),
       SizedBox(height: _betweenButtonSpacing),
       _buildPlayGameButton(5, "Level 5", "assets/levels/level5.txt", _heroTagLevel5Button),
+      SizedBox(height: _betweenButtonSpacing),
+      _buildPlayGameButton(5, "Level 6", "assets/levels/level6.txt", _heroTagLevel6Button),
+      SizedBox(height: _betweenButtonSpacing),
+      _buildPlayGameButton(5, "Level 7", "assets/levels/level7.txt", _heroTagLevel7Button),
+      SizedBox(height: _betweenButtonSpacing),
+      _buildPlayGameButton(5, "Level 8", "assets/levels/level8.txt", _heroTagLevel8Button),
+      SizedBox(height: _betweenButtonSpacing),
+      _buildPlayGameButton(5, "Level 9", "assets/levels/level9.txt", _heroTagLevel9Button),
+      SizedBox(height: _betweenButtonSpacing),
+      _buildPlayGameButton(5, "Level 10", "assets/levels/level10.txt", _heroTagLevel10Button),
+
       Expanded(
         child: Container(),
       ),
