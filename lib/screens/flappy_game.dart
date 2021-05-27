@@ -2,6 +2,7 @@ import 'dart:collection';
 import 'dart:math';
 import 'dart:ui';
 import 'dart:io';
+import 'package:gameplayground/models/user.dart';
 import 'package:path/path.dart' as path;
 import 'package:flutter/material.dart';
 
@@ -34,7 +35,9 @@ class FlappyGame extends Game with HasWidgetsOverlay {
   BuildContext _context;
 
   int _currentScore;
+  User _currentUser;
   int _highScore;
+  int _dailyHighScore;
   int _gameStartMillisecondsSinceEpoch;
   bool _isGameOver = false;
   bool _isLevelCompleted = false;
@@ -72,7 +75,9 @@ class FlappyGame extends Game with HasWidgetsOverlay {
     if (_gameSettings.playMusic) {
       _startMusic();
     }
+    _currentUser = _getSessionDataModel().currentUser;
     _highScore = _getSessionDataModel().currentUserHighScore;
+    _dailyHighScore = _getSessionDataModel().currentUserDailyHighScore;
 
     _birdController = BirdController(_gameSettings);
     _createSkyBackgroundController();
@@ -233,6 +238,7 @@ class FlappyGame extends Game with HasWidgetsOverlay {
     if (_targetController.isCompleted()) {
       session.handleLevelProg(session.getCurrentUser().id, _targetController.getLevel());
     }
+    _currentUser.updateScores(_currentScore);
     EmgRecording emgRecording = _dataProcessor.dataLog;
     GameplayData gameplayData = GameplayData(_gameStartMillisecondsSinceEpoch,
         gameEndMillisecondsSinceEpoch, _currentScore, _birdController.numFlaps);
@@ -242,7 +248,6 @@ class FlappyGame extends Game with HasWidgetsOverlay {
       _dataProcessor.resetDataLog();
     });
     _birdController.killBird();
-    _highScore = max(_highScore, _currentScore);
 
     _stopMusic();
     _showGameOverMenu(handleGameplayDataFuture);
@@ -311,7 +316,8 @@ class FlappyGame extends Game with HasWidgetsOverlay {
                   fontSize: 54,
                   decoration: TextDecoration.none))),
     ];
-    if (_currentScore > _highScore) {
+
+    if (_currentScore > _highScore || _currentScore > _dailyHighScore) {
       highScoreComponents.add(Center(
           child: Text('New High Score!',
               style: TextStyle(
@@ -322,6 +328,13 @@ class FlappyGame extends Game with HasWidgetsOverlay {
     } else {
       highScoreComponents.add(Center(
           child: Text('High Score $_highScore',
+              style: TextStyle(
+                  color: Colors.black,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 24,
+                  decoration: TextDecoration.none))));
+      highScoreComponents.add(Center(
+          child: Text('Daily High Score:' + _getSessionDataModel().getCurrentUser().getDailyHighScore().toString(),
               style: TextStyle(
                   color: Colors.black,
                   fontWeight: FontWeight.bold,

@@ -28,7 +28,10 @@ class SessionDataModel extends ChangeNotifier {
 
   String get currentUserId => _currentUser.id;
 
+  User get currentUser => _currentUser;
+
   int get currentUserHighScore => _currentUser.highScore;
+  int get currentUserDailyHighScore => _currentUser.dailyHighScore;
 
   String get currentUserDeviceName => _currentUser.deviceName;
 

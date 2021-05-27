@@ -21,6 +21,7 @@ class SurfaceEmgGameDatabase extends ChangeNotifier {
   final String _columnTypeReal = 'REAL';
 
   final int _defaultInitialHighScore = 0;
+  final int _defaultInitialDailyHighScore = 0;
   final int _defaultLastLevelCompleted = 0;
 
   Database _database;
@@ -34,7 +35,6 @@ class SurfaceEmgGameDatabase extends ChangeNotifier {
 
     // Open the database file.
     _database = await openDatabase(_databaseFilename);
-
     // Insert user data, calibration data and gameplay data tables into database
     // if missing. They should only need adding the first time the App is run.
     await _insertUserDataTableIfAbsent();
@@ -58,6 +58,7 @@ class SurfaceEmgGameDatabase extends ChangeNotifier {
         '(${_DatabaseColumnNames.idColumnName} '
         '$_columnTypeText PRIMARY KEY, '
         '${_DatabaseColumnNames.highScoreColumnName} $_columnTypeInteger, '
+        '${_DatabaseColumnNames.dailyHighScoreColumnName} $_columnTypeInteger, '
         '${_DatabaseColumnNames.lastLevelCompletedName} $_columnTypeInteger, '
         '${_DatabaseColumnNames.mostRecentActivityTimestampColumnName} '
         '$_columnTypeInteger, '
@@ -126,6 +127,7 @@ class SurfaceEmgGameDatabase extends ChangeNotifier {
     await _database.insert(_userDataDatabaseName, {
       _DatabaseColumnNames.idColumnName: id,
       _DatabaseColumnNames.highScoreColumnName: _defaultInitialHighScore,
+      _DatabaseColumnNames.dailyHighScoreColumnName: _defaultInitialDailyHighScore,
       _DatabaseColumnNames.lastLevelCompletedName: _defaultLastLevelCompleted,
       _DatabaseColumnNames.mostRecentActivityTimestampColumnName:
           DateTime.now().millisecondsSinceEpoch
@@ -157,6 +159,7 @@ class SurfaceEmgGameDatabase extends ChangeNotifier {
     var tableRows = _database.query(_userDataDatabaseName, columns: [
       _DatabaseColumnNames.idColumnName,
       _DatabaseColumnNames.highScoreColumnName,
+      _DatabaseColumnNames.dailyHighScoreColumnName,
       _DatabaseColumnNames.lastLevelCompletedName,
       _DatabaseColumnNames.mostRecentActivityTimestampColumnName,
       _DatabaseColumnNames.deviceNameColumnName
@@ -167,6 +170,7 @@ class SurfaceEmgGameDatabase extends ChangeNotifier {
         return User(
             row[_DatabaseColumnNames.idColumnName],
             row[_DatabaseColumnNames.highScoreColumnName],
+            row[_DatabaseColumnNames.dailyHighScoreColumnName],
             row[_DatabaseColumnNames.lastLevelCompletedName],
             row[_DatabaseColumnNames.mostRecentActivityTimestampColumnName],
             row[_DatabaseColumnNames.deviceNameColumnName]);
@@ -181,6 +185,7 @@ class SurfaceEmgGameDatabase extends ChangeNotifier {
         await _database.query(_userDataDatabaseName,
             columns: [
               _DatabaseColumnNames.highScoreColumnName,
+              _DatabaseColumnNames.dailyHighScoreColumnName,
               _DatabaseColumnNames.lastLevelCompletedName,
               _DatabaseColumnNames.mostRecentActivityTimestampColumnName,
               _DatabaseColumnNames.deviceNameColumnName
@@ -194,6 +199,7 @@ class SurfaceEmgGameDatabase extends ChangeNotifier {
     return User(
         id,
         userData[_DatabaseColumnNames.highScoreColumnName],
+        userData[_DatabaseColumnNames.dailyHighScoreColumnName],
         userData[_DatabaseColumnNames.lastLevelCompletedName],
         userData[_DatabaseColumnNames.mostRecentActivityTimestampColumnName],
         userData[_DatabaseColumnNames.deviceNameColumnName]);
@@ -215,7 +221,14 @@ class SurfaceEmgGameDatabase extends ChangeNotifier {
 
     int userCurrentHighScore =
         userHighScoreData.first[_DatabaseColumnNames.highScoreColumnName];
-
+    var currentUser = await getUserWithId(id);
+    int currentDailyHighScore = currentUser.getDailyHighScore();
+    if (score > currentDailyHighScore) {
+      currentUser.dailyHighScore = score;
+      _database.update(_userDataDatabaseName,
+          {_DatabaseColumnNames.dailyHighScoreColumnName: score},
+          where: '${_DatabaseColumnNames.idColumnName} = ?', whereArgs: [id]);
+    }
     if (score <= userCurrentHighScore) {
       return;
     }
@@ -344,6 +357,7 @@ class SurfaceEmgGameDatabase extends ChangeNotifier {
 class _DatabaseColumnNames {
   static const String idColumnName = 'id';
   static const String highScoreColumnName = 'highScore';
+  static const String dailyHighScoreColumnName = 'dailyHighScore';
   static const String lastLevelCompletedName = 'lastLevelCompleted';
   static const String mostRecentActivityTimestampColumnName =
       'mostRecentActivityTimestamp';
