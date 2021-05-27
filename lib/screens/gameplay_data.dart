@@ -9,6 +9,8 @@ import 'package:gameplayground/models/session_data.dart';
 import 'package:gameplayground/models/user.dart';
 import 'package:provider/provider.dart';
 
+import 'gameplay_data_detail.dart';
+
 // Charts to consider:
 // - games per day over time
 // - max/average daily score over time
@@ -45,26 +47,56 @@ class _GameplayDataPageState extends State<GameplayDataPage> {
       appBar: AppBar(
         title: Text("User Data"),
       ),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            FutureBuilder<UnmodifiableListView<GameplayData>>(
+      body: FutureBuilder<UnmodifiableListView<GameplayData>>(
                 future:_getUserData(context),
                 builder: (context,AsyncSnapshot<UnmodifiableListView<GameplayData>> gameplayData) {
-                  if(gameplayData.hasData) {
-                    return Text(gameplayData.data.toString());
+                  if (gameplayData.hasData) {
+                    if (gameplayData.data.length == 0) {
+                      return Text('No Gameplay Data is available.');
+                    } else {
+                      //Show list of gameplay data
+                      return ListView.builder(
+                        itemCount: gameplayData.data.length,
+                        itemBuilder: (context, index) =>
+                            GestureDetector(
+                                onTap: () {
+                                  Navigator.push(context,
+                                      MaterialPageRoute(
+                                          builder: (context) =>
+                                              GameplayDataDetailPage(
+                                                  gameplayData: gameplayData
+                                                      .data[index])
+                                      ));
+                                },
+                                child: Card(
+                                    child: Row(
+                                      children: [Icon(Icons.bar_chart_outlined),
+                                        Column(
+                                          children: [
+                                            Text(
+                                                'Start Time:${DateTimeFromTimeSinceEpoch(
+                                                    gameplayData.data[index]
+                                                        .startTime)}'),
+                                            Text(
+                                                'End Time:${DateTimeFromTimeSinceEpoch(
+                                                    gameplayData.data[index]
+                                                        .endTime)}')
+                                          ],
+                                        ),
+                                        Expanded(child:Text('${gameplayData.data[index].score}', style:const TextStyle(fontWeight:FontWeight.bold, fontSize:30)))
+                                      ],
+                                    )
+                                )
+                            ),
+                      );
+                    }
                   } else {
                     return CircularProgressIndicator();
                   }
                 }
-            ),
-          ],
-        ),
-      ),
+          )
     );
   }
-
   Future<UnmodifiableListView<GameplayData>> _getUserData(context) {
     return _getSessionDataModel(context).getUserGameplayData(_getSessionDataModel(context).currentUser);
   }
@@ -73,5 +105,9 @@ class _GameplayDataPageState extends State<GameplayDataPage> {
     return Provider.of<SessionDataModel>(context, listen: false);
   }
 
+  String DateTimeFromTimeSinceEpoch(int time) {
+    DateTime dt = DateTime.fromMillisecondsSinceEpoch(time);
+    String output = '${dt.year}-${dt.month}-${dt.day} ${dt.hour}:${dt.minute}:${dt.second}';
+  }
 }
 
