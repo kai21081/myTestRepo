@@ -4,11 +4,8 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:math';
 
-import 'package:charts_flutter/flutter.dart' as charts;
-import 'package:charts_flutter/flutter.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_blue/gen/flutterblue.pb.dart';
 import 'package:gameplayground/models/gameplay_data.dart';
 import 'package:gameplayground/models/session_data.dart';
 import 'package:path_provider/path_provider.dart';
@@ -50,41 +47,23 @@ class _GameplayDataDetailPageState extends State<GameplayDataDetailPage> {
         title: Text("Detailed Data Page"),
       ),
       body: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
+        mainAxisAlignment: MainAxisAlignment.start,
         children: <Widget>[
-          Expanded(
-            child: Column(
-                children: [Row(
-                  children: [
-                    Text('Start Time:'),
-                    Text('${DateTimeFromTimeSinceEpoch(gameplayData.startTime)}')
-                  ],
-                ),Row(
-                  children: [
-                    Text('End Time:'),
-                    Text('${DateTimeFromTimeSinceEpoch(gameplayData.endTime)}')
-                  ],
-                ),Row(
-                  children: [
-                    Text('Score:'),
-                    Text('${gameplayData.score}'),
-                    SizedBox(width: 20,),
-                    Text('Number of Flaps:'),
-                    Text('${gameplayData.numFlaps}')
-                  ],
-                ),
-                  Row(
-                    children: [
-                      Text('Peak Flaps:'),
-                    ],
-                  ),
-                  Row(
-                    children: [
-                      TextButton(child:Expanded(child:Text("Export")), onPressed: () {export();}),
-                    ],
-                  )
-                ]
-            )
+          Row(mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [Column(crossAxisAlignment: CrossAxisAlignment.start,
+                  children:[Text('Start Time:',style:const TextStyle(fontSize:20)),Text('End Time:',style:const TextStyle(fontSize:20)),
+                    Text('Score:',style:const TextStyle(fontSize:20)),Text('Number of Flaps:',style:const TextStyle(fontSize:20))]),
+                Column(crossAxisAlignment: CrossAxisAlignment.end,
+                children:[Text('${DateTimeFromTimeSinceEpoch(gameplayData.startTime)}',style:const TextStyle(fontSize:20)),
+                  Text('${DateTimeFromTimeSinceEpoch(gameplayData.endTime)}',style:const TextStyle(fontSize:20)),
+                  Text('${gameplayData.score}',style:const TextStyle(fontSize:20)),
+                  Text('${gameplayData.numFlaps}',style:const TextStyle(fontSize:20))])
+              ]
+          ),
+          Row(mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              TextButton(child:Text("Export",style:const TextStyle(fontSize:30)), onPressed: () {export();}),
+            ],
           )
         ]
       )
@@ -95,13 +74,6 @@ class _GameplayDataDetailPageState extends State<GameplayDataDetailPage> {
     return DateTime.fromMillisecondsSinceEpoch(time).toString();
   }
 
-  List<Series<int,int>> createRandomList() {
-    Random random = new Random();
-    List l = [];
-    for(int i = 0; i < 50; i++) {
-      l.add(new Series<int,int>());
-    }
-  }
 
   Future<void> export() async{
     GameplayData gameplayData = widget.gameplayData;
@@ -112,23 +84,23 @@ class _GameplayDataDetailPageState extends State<GameplayDataDetailPage> {
 
     SessionDataModel sessionDataModel = Provider.of<SessionDataModel>(context, listen: false);
     Directory supportDirectory = await getApplicationSupportDirectory();
+    String savedPath = path.join(supportDirectory.path, 'timestamp_${gameplayData.startTime}_user_${sessionDataModel.currentUserId}.json');
 
-    String savedPath = path.join(supportDirectory.path,'timestamp_${gameplayData.startTime}_user_$sessionDataModel.currentUserId' + ".json");
-
-    final decodedJSON = await json.decode(await rootBundle.loadString(savedPath));
+    String jsonString = await rootBundle.loadString(savedPath);
+    final decodedJSON = await json.decode(jsonString);
 
     List<List<String>> csvData = [["Device ID",sessionDataModel.currentUserDeviceName],
     ["Bluetooth ID", ], ["Start Time",DateTimeFromTimeSinceEpoch(gameplayData.startTime)],
     ["End Time", DateTimeFromTimeSinceEpoch(gameplayData.endTime)],
     ["Score", gameplayData.score.toString()],
     ["Number of Flaps", gameplayData.numFlaps.toString()],
-    ["Initial Baseline Average"]];
+    ["All Data"]];
 
-    for (int i; i < decodedJSON["processedData"].length(); i++) {
-      if (decodedJSON["processedData"][i].contains("voltage")) {
-        csvData.add(decodedJSON["processedData"][i]["voltage"]);
+    for (int i = 0; i < decodedJSON["processedData"].length; i++) {
+      if (decodedJSON["processedData"][i].containsKey("voltage")) {
+        csvData.add([decodedJSON["processedData"][i]["voltage"].toString()]);
       } else {
-        csvData.add(decodedJSON["processedData"][i]["rawValue"]);
+        csvData.add([decodedJSON["processedData"][i]["rawValue"].toString()]);
       }
     }
 

@@ -69,21 +69,21 @@ class _GameplayDataPageState extends State<GameplayDataPage> {
                                       ));
                                 },
                                 child: Card(
-                                    child: Row(
-                                      children: [Icon(Icons.bar_chart_outlined),
-                                        Column(
+                                    child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [Row(children:[Icon(Icons.bar_chart_outlined,size:40),
+                                        Column(crossAxisAlignment: CrossAxisAlignment.values[0],
                                           children: [
                                             Text(
-                                                'Start Time:${DateTimeFromTimeSinceEpoch(
+                                                'Start Time: ${DateTimeFromTimeSinceEpoch(
                                                     gameplayData.data[index]
-                                                        .startTime)}'),
+                                                        .startTime)}', style:const TextStyle(fontSize:15)),
                                             Text(
-                                                'End Time:${DateTimeFromTimeSinceEpoch(
+                                                'End Time: ${DateTimeFromTimeSinceEpoch(
                                                     gameplayData.data[index]
-                                                        .endTime)}')
+                                                        .endTime)}', style:const TextStyle(fontSize:15))
                                           ],
-                                        ),
-                                        Expanded(child:Text('${gameplayData.data[index].score}', style:const TextStyle(fontWeight:FontWeight.bold, fontSize:30)))
+                                        )]),
+                                        Align(alignment: Alignment.centerRight, child:Text('${gameplayData.data[index].score}', style:const TextStyle(fontWeight:FontWeight.bold, fontSize:35)))
                                       ],
                                     )
                                 )
@@ -107,7 +107,7 @@ class _GameplayDataPageState extends State<GameplayDataPage> {
 
   String DateTimeFromTimeSinceEpoch(int time) {
     DateTime dt = DateTime.fromMillisecondsSinceEpoch(time);
-    String output = '${dt.year}-${dt.month}-${dt.day} ${dt.hour}:${dt.minute}:${dt.second}';
+    return '${dt.year}-${dt.month}-${dt.day} ${dt.hour}:${dt.minute}:${dt.second}';
   }
 }
 
