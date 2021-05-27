@@ -55,7 +55,6 @@ class SurfaceEmgGameDatabase extends ChangeNotifier {
     if (await _tableExists(_userDataDatabaseName)) {
       return;
     }
-
     _database.execute('CREATE TABLE $_userDataDatabaseName '
         '(${_DatabaseColumnNames.idColumnName} '
         '$_columnTypeText PRIMARY KEY, '
@@ -98,13 +97,15 @@ class SurfaceEmgGameDatabase extends ChangeNotifier {
 
     _database.execute('CREATE TABLE $_gameplayDataDatabaseName '
         '(${_DatabaseColumnNames.gameStartTimestampColumnName} '
-        '$_columnTypeInteger PRIMARY KEY, '
+        '$_columnTypeInteger, '
         '${_DatabaseColumnNames.gameEndTimestampColumnName} '
         '$_columnTypeInteger, '
         '${_DatabaseColumnNames.gameUserIdColumnName} $_columnTypeText, '
-        '${_DatabaseColumnNames.gameScoreColumnName} $_columnTypeInteger,'
-        '${_DatabaseColumnNames.numFlapsColumnName} $_columnTypeInteger)');
+        '${_DatabaseColumnNames.gameScoreColumnName} $_columnTypeInteger, '
+        '${_DatabaseColumnNames.numFlapsColumnName} $_columnTypeInteger'
+        ')');
   }
+
 
   Future<bool> containsUserWithId(String id) async {
     var userIds = await _database.query(_userDataDatabaseName,
@@ -139,7 +140,7 @@ class SurfaceEmgGameDatabase extends ChangeNotifier {
   // TODO: Do some more robust error handling.
   Future<void> insertDataFromSingleGame(int gameStartTimestamp,
       int gameEndTimestamp, String userId, int score, int numFlaps) async {
-    await _database.insert(_gameplayDataDatabaseName, {
+    await _database.insert(_gameplayDataDatabaseName, <String,dynamic>{
       _DatabaseColumnNames.gameStartTimestampColumnName: gameStartTimestamp,
       _DatabaseColumnNames.gameEndTimestampColumnName: gameEndTimestamp,
       _DatabaseColumnNames.gameUserIdColumnName: userId,
