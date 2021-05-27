@@ -10,7 +10,7 @@ import 'package:gameplayground/models/emg_sample.dart';
 class EmgRecording<T extends EmgSample> {
   //Turning this on will save every data point, for debugging purposes
   //KEEP OFF IN PRODUCTION
-  static const DEBUG_RECORDING = false;
+  static const DEBUG_RECORDING = true;
 
   List<T> _data = List<T>();
 
