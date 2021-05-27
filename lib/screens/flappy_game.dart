@@ -258,89 +258,82 @@ class FlappyGame extends Game with HasWidgetsOverlay {
         _gameOverMenuOverlayName,
         Center(
             child: FutureBuilder(
-          future: canDisplayMenuFuture,
-          builder: (context, snapshot) {
-            if (snapshot.connectionState == ConnectionState.done) {
-              return Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                mainAxisSize: MainAxisSize.min,
-                children: <Widget>[
-                  FloatingActionButton.extended(
-                    label: Text(_labelRestart),
-                    heroTag: _heroTagRestartGameButton,
-                    onPressed: () {
-                      removeWidgetOverlay(_gameOverMenuOverlayName);
-                      _restartGame();
-                    },
-                  ),
-                  SizedBox(height: 20),
-                  Text('Number of Flaps:' + _birdController.numFlaps.toString(),
-                      style: TextStyle(
-                        color: Colors.black,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 20,
-                        decoration: TextDecoration.none)),
-                  SizedBox(height: 20),
-                  Text('High Score for the Day:',
-                      style: TextStyle(
-                          color: Colors.black,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 20,
-                          decoration: TextDecoration.none)),
-                  FloatingActionButton.extended(
-                    label: Text(_labelMainMenu),
-                    heroTag: _heroTagMainMenuButton,
-                    onPressed: () {
-                      Navigator.pop(this._context, true);
-                    },
-                  )
-                ],
-              );
-            } else {
-              return CircularProgressIndicator();
-            }
-          },
-        )));
+              future: canDisplayMenuFuture,
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.done) {
+                  return Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    mainAxisSize: MainAxisSize.min,
+                    children: <Widget>[
+                      Text('Number of Flaps:' + _birdController.numFlaps.toString(),
+                          style: TextStyle(
+                              color: Colors.black,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 20,
+                              decoration: TextDecoration.none)),
+                      SizedBox(height: 20),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          FloatingActionButton.extended(
+                            label: Text(_labelRestart),
+                            heroTag: _heroTagRestartGameButton,
+                            onPressed: () {
+                              removeWidgetOverlay(_gameOverMenuOverlayName);
+                              _restartGame();
+                            },
+                          ),
+                          SizedBox(width: 40,),
+                          FloatingActionButton.extended(
+                            label: Text(_labelMainMenu),
+                            heroTag: _heroTagMainMenuButton,
+                            onPressed: () {
+                              Navigator.pop(this._context, true);
+                            },
+                          )
+                        ],)
+
+                    ],
+                  );
+                } else {
+                  return CircularProgressIndicator();
+                }
+              },
+            )));
   }
 
   void _updateScoreCounter() {
     removeWidgetOverlay(_currentScoreOverlayName);
 
     List<Widget> highScoreComponents = [
-      SizedBox(height: 20),
-      Center(
-          child: Text('Score: $_currentScore',
+      Row(
+         mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+          Text('Score: $_currentScore',
               style: TextStyle(
                   color: Colors.black,
                   fontWeight: FontWeight.bold,
-                  fontSize: 54,
-                  decoration: TextDecoration.none))),
-    ];
-
-    if (_currentScore > _highScore || _currentScore > _dailyHighScore) {
-      highScoreComponents.add(Center(
-          child: Text('New High Score!',
-              style: TextStyle(
-                  color: Colors.black,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 24,
-                  decoration: TextDecoration.none))));
-    } else {
-      highScoreComponents.add(Center(
-          child: Text('High Score $_highScore',
-              style: TextStyle(
-                  color: Colors.black,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 24,
-                  decoration: TextDecoration.none))));
-      highScoreComponents.add(Center(
-          child: Text('Daily High Score:' + _getSessionDataModel().getCurrentUser().getDailyHighScore().toString(),
-              style: TextStyle(
-                  color: Colors.black,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 24,
-                  decoration: TextDecoration.none))));
-    }
+                  fontSize: 35,
+                  decoration: TextDecoration.none)),
+          Column(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+            Text('High Score $_highScore',
+                style: TextStyle(
+                    color: Colors.black,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 15,
+                    decoration: TextDecoration.none)),
+            Text('Daily High Score:' + _getSessionDataModel().getCurrentUser().getDailyHighScore().toString(),
+                style: TextStyle(
+                    color: Colors.black,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 15,
+                    decoration: TextDecoration.none))
+    ]
+          )
+         ]
+    )];
 
     addWidgetOverlay(
         _currentScoreOverlayName,
