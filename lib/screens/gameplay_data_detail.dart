@@ -1,19 +1,15 @@
 import 'dart:async';
-import 'dart:collection';
 import 'dart:convert';
 import 'dart:io';
-import 'dart:math';
 
 import 'package:charts_flutter/flutter.dart' as charts;
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:gameplayground/models/gameplay_data.dart';
 import 'package:gameplayground/models/session_data.dart';
 import 'package:intl/intl.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:share_extend/share_extend.dart';
-import 'package:path/path.dart' as path;
 import 'package:csv/csv.dart';
 
 class GameplayDataDetailPage extends StatefulWidget {
