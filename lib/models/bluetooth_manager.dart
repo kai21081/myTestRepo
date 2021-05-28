@@ -47,6 +47,8 @@ class BluetoothManager {
   CallbackCollection<String, RawEmgSample> _handleEmgSampleCallbacks =
       CallbackCollection<String, RawEmgSample>();
 
+  String get deviceName => _device.name;
+
   BluetoothManager() : _flutterBlue = FlutterBlue.instance {
     _flutterBlue.setLogLevel(LogLevel.debug);
   }

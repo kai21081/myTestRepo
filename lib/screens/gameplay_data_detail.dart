@@ -167,20 +167,21 @@ class _GameplayDataDetailPageState extends State<GameplayDataDetailPage> {
 
   Future<void> export() async {
     GameplayData gameplayData = widget.gameplayData;
-    Directory dir = Platform.isAndroid
-        ? await getExternalStorageDirectory()
-        : await getApplicationDocumentsDirectory();
-    File output = new File(
-        "${dir.path}/flutter/${gameplayData.startTime}_${gameplayData.endTime}.csv");
 
     SessionDataModel sessionDataModel =
         Provider.of<SessionDataModel>(context, listen: false);
 
+    Directory dir = Platform.isAndroid
+        ? await getExternalStorageDirectory()
+        : await getApplicationDocumentsDirectory();
+    File output = new File(
+        "${dir.path}/flutter/${sessionDataModel.currentUser.id}_${gameplayData.startTime}.csv");
+
     final decodedJSON = json.decode(await getJSONfile());
 
     List<List<String>> csvData = [
-      ["Device ID", sessionDataModel.currentUserDeviceName],
-      ["Bluetooth ID"],
+      ["User ID", sessionDataModel.currentUserDeviceName],
+      ["Device Name", gameplayData.deviceName],
       ["Start Time", DateTimeFromTimeSinceEpoch(gameplayData.startTime)],
       ["End Time", DateTimeFromTimeSinceEpoch(gameplayData.endTime)],
       ["Score", gameplayData.score.toString()],

@@ -26,6 +26,8 @@ class ThresholdedTriggerDataProcessor {
 
   EmgRecording get dataLog => _dataLog;
 
+  String get deviceName => _bluetoothManager.deviceName;
+
   ThresholdedTriggerDataProcessor(this._bluetoothManager);
 
   void startProcessing(Function(ProcessedEmgSample) onTriggerCallback,

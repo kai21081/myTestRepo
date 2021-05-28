@@ -99,8 +99,7 @@ class FlappyGame extends Game with HasWidgetsOverlay {
       _birdController.onTapDown();
     }, logData: true);
 
-    //FOR DEBUGGING, remove later
-    Future.delayed(Duration(seconds:10), () {_endGame();});
+    Future.delayed(Duration(seconds:5), () {_endGame();});
   }
 
   void _createSkyBackgroundController() {
@@ -228,15 +227,14 @@ class FlappyGame extends Game with HasWidgetsOverlay {
   }
 
   void _endGame() {
-    // For visual display
-    _currentScore = new Random().nextInt(38) + 5;
+    _currentScore = new Random().nextInt(38)+5;
     _dataProcessor.stopProcessing();
     int gameEndMillisecondsSinceEpoch = DateTime.now().millisecondsSinceEpoch;
     _isGameOver = true;
 
     EmgRecording emgRecording = _dataProcessor.dataLog;
     GameplayData gameplayData = GameplayData(_gameStartMillisecondsSinceEpoch,
-        gameEndMillisecondsSinceEpoch, _currentScore,_birdController.numFlaps,"");
+        gameEndMillisecondsSinceEpoch, _currentScore,_birdController.numFlaps,"",_dataProcessor.deviceName);
     Future<void> handleGameplayDataFuture = _getSessionDataModel()
         .handleGameplayData(gameplayData, _gameSettings, emgRecording)
         .then((_) {

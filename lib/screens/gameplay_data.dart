@@ -4,6 +4,7 @@ import 'dart:collection';
 import 'package:flutter/material.dart';
 import 'package:gameplayground/models/gameplay_data.dart';
 import 'package:gameplayground/models/session_data.dart';
+import 'package:gameplayground/models/user.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
@@ -71,7 +72,7 @@ class _GameplayDataPageState extends State<GameplayDataPage> {
                               Row(children: [
                                 Icon(Icons.bar_chart_outlined, size: 40),
                                 SizedBox(
-                                  width: 10,
+                                  width: 5,
                                 ),
                                 Column(
                                   crossAxisAlignment:
@@ -109,6 +110,10 @@ class _GameplayDataPageState extends State<GameplayDataPage> {
         .getUserGameplayData(_getSessionDataModel(context).currentUser);
   }
 
+  Future<User> _getUserStats(context) {
+    return _getSessionDataModel(context).getUser(_getSessionDataModel(context).currentUserId);
+  }
+
   SessionDataModel _getSessionDataModel(context) {
     return Provider.of<SessionDataModel>(context, listen: false);
   }
@@ -117,4 +122,19 @@ class _GameplayDataPageState extends State<GameplayDataPage> {
     DateTime dt = DateTime.fromMillisecondsSinceEpoch(time);
     return DateFormat.yMd().add_jm().format(dt);
   }
+
+  Future<List<Widget>> summaryWidgetList(List<GameplayData> gameplayDataList, context) async{
+    User userData = await _getUserStats(context);
+    int totalGamesPlayed = gameplayDataList.length;
+    int highScore = userData.highScore;
+    //String highScoreDate = userData.highScoreDate;
+    //int highestLevel = userDate.highestLevel;
+    //String highestLevelDate = userData.highestLevelDate
+  }
+}
+
+
+class singleDayWidgetBuilder {
+ DateTime date;
+ List<GameplayData> gameplayDataList;
 }
