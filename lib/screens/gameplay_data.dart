@@ -1,12 +1,9 @@
 import 'dart:async';
 import 'dart:collection';
-import 'dart:math';
 
-import 'package:charts_flutter/flutter.dart' as charts;
 import 'package:flutter/material.dart';
 import 'package:gameplayground/models/gameplay_data.dart';
 import 'package:gameplayground/models/session_data.dart';
-import 'package:gameplayground/models/user.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
