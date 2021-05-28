@@ -48,7 +48,7 @@ class _GameplayDataPageState extends State<GameplayDataPage> {
             future: _getUserData(context),
             builder: (context,
                 AsyncSnapshot<UnmodifiableListView<GameplayData>>
-                gameplayData) {
+                    gameplayData) {
               if (gameplayData.hasData) {
                 if (gameplayData.data.length == 0) {
                   return Text('No Gameplay Data is available.');
@@ -66,37 +66,39 @@ class _GameplayDataPageState extends State<GameplayDataPage> {
                         },
                         child: Card(
                             child: Padding(
-                              padding: const EdgeInsets.all(20.0),
-                              child: Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Row(children: [
-                                    Icon(Icons.bar_chart_outlined, size: 40),
-                                    SizedBox(width: 10,),
-                                    Column(
-                                      crossAxisAlignment:
+                          padding: const EdgeInsets.all(20.0),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(children: [
+                                Icon(Icons.bar_chart_outlined, size: 40),
+                                SizedBox(
+                                  width: 10,
+                                ),
+                                Column(
+                                  crossAxisAlignment:
                                       CrossAxisAlignment.values[0],
-                                      children: [
-                                        Text(
-                                            'Start Time: ${DateTimeFromTimeSinceEpoch(gameplayData.data[index].startTime)}',
-                                            style: const TextStyle(fontSize: 15)),
-                                        Text(
-                                            'End Time: ${DateTimeFromTimeSinceEpoch(gameplayData.data[index].endTime)}',
-                                            style: const TextStyle(fontSize: 15))
-                                      ],
-                                    )
-                                  ]),
-                                  Align(
-                                      alignment: Alignment.centerRight,
-                                      child: Text(
-                                          '${gameplayData.data[index].score}',
-                                          style: const TextStyle(
-                                              fontWeight: FontWeight.bold,
-                                              fontSize: 35)))
-                                ],
-                              ),
-                            ))),
+                                  children: [
+                                    Text(
+                                        'Start Time: ${DateTimeFromTimeSinceEpoch(gameplayData.data[index].startTime)}',
+                                        style: const TextStyle(fontSize: 15)),
+                                    Text(
+                                        'End Time: ${DateTimeFromTimeSinceEpoch(gameplayData.data[index].endTime)}',
+                                        style: const TextStyle(fontSize: 15))
+                                  ],
+                                )
+                              ]),
+                              Align(
+                                  alignment: Alignment.centerRight,
+                                  child: Text(
+                                      '${gameplayData.data[index].score}',
+                                      style: const TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 35)))
+                            ],
+                          ),
+                        ))),
                   );
                 }
               } else {

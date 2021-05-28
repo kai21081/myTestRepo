@@ -102,7 +102,8 @@ class SurfaceEmgGameDatabase extends ChangeNotifier {
         '$_columnTypeInteger, '
         '${_DatabaseColumnNames.gameUserIdColumnName} $_columnTypeText, '
         '${_DatabaseColumnNames.gameScoreColumnName} $_columnTypeInteger, '
-        '${_DatabaseColumnNames.numFlapsColumnName} $_columnTypeInteger'
+        '${_DatabaseColumnNames.numFlapsColumnName} $_columnTypeInteger, '
+        '${_DatabaseColumnNames.savePathColumnName} $_columnTypeText'
         ')');
   }
 
@@ -179,7 +180,8 @@ class SurfaceEmgGameDatabase extends ChangeNotifier {
   Future<UnmodifiableListView<GameplayData>> getOneUserData(User user) async {
     var tableRows = _database.query(_gameplayDataDatabaseName,
     where: '${_DatabaseColumnNames.gameUserIdColumnName} = ?',
-    whereArgs: [user.id]);
+    whereArgs: [user.id],
+    orderBy:'${_DatabaseColumnNames.gameStartTimestampColumnName} DESC');
     return tableRows.then((List<Map<String, dynamic>> tableData) {
       return UnmodifiableListView(tableData.map((Map<String, dynamic> row) {
         return GameplayData(
