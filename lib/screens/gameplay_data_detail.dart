@@ -212,10 +212,7 @@ class _GameplayDataDetailPageState extends State<GameplayDataDetailPage> {
 
   Future<String> getJSONfile() async {
     GameplayData gameplayData = widget.gameplayData;
-    SessionDataModel sessionDataModel = Provider.of<SessionDataModel>(context, listen: false);
-    Directory supportDirectory = await getApplicationSupportDirectory();
-    String savedPath = path.join(supportDirectory.path,
-        'timestamp_${gameplayData.startTime}_user_${sessionDataModel.currentUserId}.json');
+    String savedPath = gameplayData.emgRecordingPath;
     File jsonFile = new File(savedPath);
     if (!await jsonFile.exists()) {
       return null;
