@@ -48,8 +48,6 @@ class EmgRecording<T extends EmgSample> {
   //and the refractory period of a flap
   void addSample(T sample, bool isFlap, int refractoryPeriod) {
     //Save every sample if debugging
-    if(DEBUG_RECORDING && _data.length >= 2)
-      _data.removeLast();
     _data.add(sample);
 
     //If this is a flap and it has been enough time since the last flap
