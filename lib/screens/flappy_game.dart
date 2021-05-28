@@ -236,7 +236,7 @@ class FlappyGame extends Game with HasWidgetsOverlay {
 
     EmgRecording emgRecording = _dataProcessor.dataLog;
     GameplayData gameplayData = GameplayData(_gameStartMillisecondsSinceEpoch,
-        gameEndMillisecondsSinceEpoch, _currentScore,_birdController.numFlaps);
+        gameEndMillisecondsSinceEpoch, _currentScore,_birdController.numFlaps,"");
     Future<void> handleGameplayDataFuture = _getSessionDataModel()
         .handleGameplayData(gameplayData, _gameSettings, emgRecording)
         .then((_) {

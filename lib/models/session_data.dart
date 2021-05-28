@@ -110,21 +110,24 @@ class SessionDataModel extends ChangeNotifier {
       GameplayData gameplayData,
       GameSettings gameSettings,
       EmgRecording emgRecording) async {
-    Future<void> databaseWriteAndUserUpdateFuture = _database
-        .insertDataFromSingleGame(gameplayData.startTime, gameplayData.endTime,
-            _currentUser.id, gameplayData.score, gameplayData.numFlaps)
-        .then((_) async {
-      _currentUser = await _database.getUserWithId(_currentUser.id);
-    });
+    Directory supportDirectory = await getApplicationSupportDirectory();
 
-    getApplicationSupportDirectory().then((Directory supportDirectory) {
-      final String savePath = path.join(
+    final String savePath = path.join(
           supportDirectory.path,
           _makeTimestampIdFilename(gameplayData.startTime, _currentUser.id) +
               _jsonExtension);
-      saveGameRecord(
-          _currentUser.id, gameSettings, emgRecording, gameplayData, savePath);
+
+    gameplayData = new GameplayData(gameplayData.startTime, gameplayData.endTime,
+        gameplayData.score, gameplayData.numFlaps,savePath);
+
+    Future<void> databaseWriteAndUserUpdateFuture = _database
+        .insertDataFromSingleGame(gameplayData.startTime, gameplayData.endTime,
+        _currentUser.id, gameplayData.score, gameplayData.numFlaps,gameplayData.emgRecordingPath).then((_) async {
+      _currentUser = await _database.getUserWithId(_currentUser.id);
     });
+
+    saveGameRecord(
+          _currentUser.id, gameSettings, emgRecording, gameplayData, savePath);
 
     return databaseWriteAndUserUpdateFuture;
   }

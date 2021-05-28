@@ -139,13 +139,14 @@ class SurfaceEmgGameDatabase extends ChangeNotifier {
   // Will fail ungracefully if start timestamp already exists in table.
   // TODO: Do some more robust error handling.
   Future<void> insertDataFromSingleGame(int gameStartTimestamp,
-      int gameEndTimestamp, String userId, int score, int numFlaps) async {
+      int gameEndTimestamp, String userId, int score, int numFlaps, String savePath) async {
     await _database.insert(_gameplayDataDatabaseName, <String,dynamic>{
       _DatabaseColumnNames.gameStartTimestampColumnName: gameStartTimestamp,
       _DatabaseColumnNames.gameEndTimestampColumnName: gameEndTimestamp,
       _DatabaseColumnNames.gameUserIdColumnName: userId,
       _DatabaseColumnNames.gameScoreColumnName: score,
       _DatabaseColumnNames.numFlapsColumnName: numFlaps,
+      _DatabaseColumnNames.savePathColumnName: savePath,
     });
 
     updateHighScoreIfBetter(userId, score);
@@ -185,7 +186,8 @@ class SurfaceEmgGameDatabase extends ChangeNotifier {
             row[_DatabaseColumnNames.gameStartTimestampColumnName],
             row[_DatabaseColumnNames.gameEndTimestampColumnName],
             row[_DatabaseColumnNames.gameScoreColumnName],
-            row[_DatabaseColumnNames.numFlapsColumnName]);
+            row[_DatabaseColumnNames.numFlapsColumnName],
+            row[_DatabaseColumnNames.savePathColumnName]);
       }));
     });
   }
@@ -349,6 +351,7 @@ class _DatabaseColumnNames {
   static const String gameUserIdColumnName = 'userId';
   static const String gameScoreColumnName = 'score';
   static const String numFlapsColumnName = 'numFlaps';
+  static const String savePathColumnName = 'savePath';
 
   static const String flapVelocityInScreenHeightFractionPerSecondColumnName =
       'flapVelocityInScreenHeightFractionPerSecond';
