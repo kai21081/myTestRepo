@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:gameplayground/models/gameplay_data.dart';
 import 'package:gameplayground/models/session_data.dart';
 import 'package:gameplayground/models/user.dart';
+import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
 import 'gameplay_data_detail.dart';
@@ -27,8 +28,6 @@ class GameplayDataPage extends StatefulWidget {
 }
 
 class _GameplayDataPageState extends State<GameplayDataPage> {
-
-
   @override
   void initState() {
     super.initState();
@@ -41,64 +40,74 @@ class _GameplayDataPageState extends State<GameplayDataPage> {
 
   @override
   Widget build(BuildContext context) {
-
-
     return Scaffold(
-      appBar: AppBar(
-        title: Text("User Data"),
-      ),
-      body: FutureBuilder<UnmodifiableListView<GameplayData>>(
-                future:_getUserData(context),
-                builder: (context,AsyncSnapshot<UnmodifiableListView<GameplayData>> gameplayData) {
-                  if (gameplayData.hasData) {
-                    if (gameplayData.data.length == 0) {
-                      return Text('No Gameplay Data is available.');
-                    } else {
-                      //Show list of gameplay data
-                      return ListView.builder(
-                        itemCount: gameplayData.data.length,
-                        itemBuilder: (context, index) =>
-                            GestureDetector(
-                                onTap: () {
-                                  Navigator.push(context,
-                                      MaterialPageRoute(
-                                          builder: (context) =>
-                                              GameplayDataDetailPage(
-                                                  gameplayData: gameplayData
-                                                      .data[index])
-                                      ));
-                                },
-                                child: Card(
-                                    child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: [Row(children:[Icon(Icons.bar_chart_outlined,size:40),
-                                        Column(crossAxisAlignment: CrossAxisAlignment.values[0],
-                                          children: [
-                                            Text(
-                                                'Start Time: ${DateTimeFromTimeSinceEpoch(
-                                                    gameplayData.data[index]
-                                                        .startTime)}', style:const TextStyle(fontSize:15)),
-                                            Text(
-                                                'End Time: ${DateTimeFromTimeSinceEpoch(
-                                                    gameplayData.data[index]
-                                                        .endTime)}', style:const TextStyle(fontSize:15))
-                                          ],
-                                        )]),
-                                        Align(alignment: Alignment.centerRight, child:Text('${gameplayData.data[index].score}', style:const TextStyle(fontWeight:FontWeight.bold, fontSize:35)))
+        appBar: AppBar(
+          title: Text("User Data"),
+        ),
+        body: FutureBuilder<UnmodifiableListView<GameplayData>>(
+            future: _getUserData(context),
+            builder: (context,
+                AsyncSnapshot<UnmodifiableListView<GameplayData>>
+                gameplayData) {
+              if (gameplayData.hasData) {
+                if (gameplayData.data.length == 0) {
+                  return Text('No Gameplay Data is available.');
+                } else {
+                  //Show list of gameplay data
+                  return ListView.builder(
+                    itemCount: gameplayData.data.length,
+                    itemBuilder: (context, index) => GestureDetector(
+                        onTap: () {
+                          Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                  builder: (context) => GameplayDataDetailPage(
+                                      gameplayData: gameplayData.data[index])));
+                        },
+                        child: Card(
+                            child: Padding(
+                              padding: const EdgeInsets.all(20.0),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(children: [
+                                    Icon(Icons.bar_chart_outlined, size: 40),
+                                    SizedBox(width: 10,),
+                                    Column(
+                                      crossAxisAlignment:
+                                      CrossAxisAlignment.values[0],
+                                      children: [
+                                        Text(
+                                            'Start Time: ${DateTimeFromTimeSinceEpoch(gameplayData.data[index].startTime)}',
+                                            style: const TextStyle(fontSize: 15)),
+                                        Text(
+                                            'End Time: ${DateTimeFromTimeSinceEpoch(gameplayData.data[index].endTime)}',
+                                            style: const TextStyle(fontSize: 15))
                                       ],
                                     )
-                                )
-                            ),
-                      );
-                    }
-                  } else {
-                    return CircularProgressIndicator();
-                  }
+                                  ]),
+                                  Align(
+                                      alignment: Alignment.centerRight,
+                                      child: Text(
+                                          '${gameplayData.data[index].score}',
+                                          style: const TextStyle(
+                                              fontWeight: FontWeight.bold,
+                                              fontSize: 35)))
+                                ],
+                              ),
+                            ))),
+                  );
                 }
-          )
-    );
+              } else {
+                return CircularProgressIndicator();
+              }
+            }));
   }
+
   Future<UnmodifiableListView<GameplayData>> _getUserData(context) {
-    return _getSessionDataModel(context).getUserGameplayData(_getSessionDataModel(context).currentUser);
+    return _getSessionDataModel(context)
+        .getUserGameplayData(_getSessionDataModel(context).currentUser);
   }
 
   SessionDataModel _getSessionDataModel(context) {
@@ -107,7 +116,6 @@ class _GameplayDataPageState extends State<GameplayDataPage> {
 
   String DateTimeFromTimeSinceEpoch(int time) {
     DateTime dt = DateTime.fromMillisecondsSinceEpoch(time);
-    return '${dt.year}-${dt.month}-${dt.day} ${dt.hour}:${dt.minute}:${dt.second}';
+    return DateFormat.yMd().add_jm().format(dt);
   }
 }
-

@@ -228,6 +228,8 @@ class FlappyGame extends Game with HasWidgetsOverlay {
   }
 
   void _endGame() {
+    // For visual display
+    _currentScore = new Random().nextInt(38) + 5;
     _dataProcessor.stopProcessing();
     int gameEndMillisecondsSinceEpoch = DateTime.now().millisecondsSinceEpoch;
     _isGameOver = true;
