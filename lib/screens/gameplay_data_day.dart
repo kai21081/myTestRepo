@@ -4,18 +4,20 @@ import 'package:flutter/material.dart';
 import 'package:gameplayground/models/gameplay_data.dart';
 import 'package:intl/intl.dart';
 
-class GameplayDataDetailPage extends StatefulWidget {
+import 'gameplay_data_detail.dart';
+
+class GameplayDataDayPage extends StatefulWidget {
   final String title;
   final List<GameplayData> gameplayData;
 
-  GameplayDataDetailPage({Key key, this.title, this.gameplayData})
+  GameplayDataDayPage({Key key, this.title, this.gameplayData})
       : super(key: key);
 
   @override
-  _GameplayDataDetailPageState createState() => _GameplayDataDetailPageState();
+  _GameplayDataDayPageState createState() => _GameplayDataDayPageState();
 }
 
-class _GameplayDataDetailPageState extends State<GameplayDataDetailPage> {
+class _GameplayDataDayPageState extends State<GameplayDataDayPage> {
   @override
   void initState() {
     super.initState();
@@ -76,7 +78,7 @@ class _GameplayDataDetailPageState extends State<GameplayDataDetailPage> {
                 context,
                 MaterialPageRoute(
                     builder: (context) => GameplayDataDetailPage(
-                        gameplayData: [gameplayDataList.elementAt(index)])));
+                        gameplayData: gameplayDataList.elementAt(index))));
           },
           child: Card(
               child: Padding(
