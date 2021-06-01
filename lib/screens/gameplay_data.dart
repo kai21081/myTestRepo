@@ -120,7 +120,8 @@ class _GameplayDataPageState extends State<GameplayDataPage> {
         //Text("Highest Level: ${highestLevel}"),Text(highestLevelDate)]),
       Divider(),
       Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children:[
-        Text("Streaks"),Column(children:[Text("Played at least 1 game: ${getGameStreak(gameplayDataList).toString()}")])
+        Text("Streaks"),Column(children:[Text("Played at least 1 game: ${getGameStreak(gameplayDataList).toString()}"),
+        Text("Played at least 30 mins: ${get30minStreak(gameplayDataList).toString()}")])
       ]),
       Divider(),
       Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
@@ -189,6 +190,32 @@ class _GameplayDataPageState extends State<GameplayDataPage> {
     }
     return output;
   }
+
+  int get30minStreak(List<GameplayData> gameplayDataList) {
+    if(gameplayDataList.isEmpty ||
+        !(DateUtils.isSameDay(getDateTime(gameplayDataList.first),DateTime.now()) ||
+            DateUtils.isSameDay(getDateTime(gameplayDataList.first).add(Duration(days:1)),DateTime.now()))){
+      return 0;
+    }
+
+    int output = 1;
+    Duration dayDuration = Duration();
+    for(int i = 1; i < gameplayDataList.length; i++) {
+      if (DateUtils.isSameDay(getDateTime(gameplayDataList[i-1]),
+          getDateTime(gameplayDataList[i]).add(Duration(days:1))) && dayDuration.inMinutes >= 30) {
+        output++;
+        dayDuration = getDateTime(gameplayDataList[i]).difference(DateTime.fromMillisecondsSinceEpoch(gameplayDataList[i].endTime));
+      }
+      else if(!DateUtils.isSameDay(getDateTime(gameplayDataList[i-1]),
+          getDateTime(gameplayDataList[i])))
+        return output;
+      else
+        dayDuration += getDateTime(gameplayDataList[i]).difference(DateTime.fromMillisecondsSinceEpoch(gameplayDataList[i].endTime));
+    }
+    return output;
+  }
+  
+
 
   DateTime getDateTime(GameplayData gameplayData) {
     return DateTime.fromMillisecondsSinceEpoch(gameplayData.startTime);
