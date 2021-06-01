@@ -35,7 +35,6 @@ class _GameplayDataDayPageState extends State<GameplayDataDayPage> {
           title: Text("Day Data Page"),
         ),
         body: Column(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children:buildSummaryWidgets() + buildWidgets(),
             ),
           );
@@ -47,8 +46,8 @@ class _GameplayDataDayPageState extends State<GameplayDataDayPage> {
   }
 
   Duration maxGameTime(Duration i, GameplayData j) {
-    if(i.compareTo(DateTime.fromMillisecondsSinceEpoch(j.startTime).difference(DateTime.fromMillisecondsSinceEpoch(j.endTime))) < 0) {
-      return DateTime.fromMillisecondsSinceEpoch(j.startTime).difference(DateTime.fromMillisecondsSinceEpoch(j.endTime));
+    if(i.compareTo(DateTime.fromMillisecondsSinceEpoch(j.endTime).difference(DateTime.fromMillisecondsSinceEpoch(j.startTime))) < 0) {
+      return DateTime.fromMillisecondsSinceEpoch(j.endTime).difference(DateTime.fromMillisecondsSinceEpoch(j.startTime));
     }
     return i;
   }
@@ -57,15 +56,23 @@ class _GameplayDataDayPageState extends State<GameplayDataDayPage> {
     List<GameplayData> gameplayDataList = widget.gameplayData;
     List<Widget> widgets = [];
     Duration totalGameTime = gameplayDataList.fold(new Duration(),(i,j)=>i +
-        (DateTime.fromMillisecondsSinceEpoch(j.startTime).difference(DateTime.fromMillisecondsSinceEpoch(j.endTime))));
+        (DateTime.fromMillisecondsSinceEpoch(j.endTime).difference(DateTime.fromMillisecondsSinceEpoch(j.startTime))));
     Duration maxGameTime = gameplayDataList.fold(new Duration(),(i,j)=> this.maxGameTime(i,j));
     int highestScore = gameplayDataList.fold(0,(i,j) => max(i,j.score));
     //int highestLevel = gameplayDataList.fold(0,(i,j) => max(i,j.level));
 
-    widgets.add(Padding(padding:const EdgeInsets.all(20.0),child:Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children:[Text("Total Game Time"),Text(totalGameTime.toString())])));
-    widgets.add(Padding(padding:const EdgeInsets.all(20.0),child:Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children:[Text("Longest Game Time"),Text(maxGameTime.toString())])));
+    widgets.add(Padding(padding:const EdgeInsets.all(20.0),child:Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children:[Text("Total Game Time"),Text(durationToString(totalGameTime))])));
+    widgets.add(Padding(padding:const EdgeInsets.all(20.0),child:Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children:[Text("Longest Game Time"),Text(durationToString(maxGameTime))])));
     widgets.add(Padding(padding:const EdgeInsets.all(20.0),child:Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children:[Text("Highest Score"),Text(highestScore.toString())])));
     widgets.add(Padding(padding:const EdgeInsets.all(20.0),child:Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children:[Text("Highest Level"),Text("NOT IMPLEMENTED YET")])));
+    return widgets;
+  }
+
+  String durationToString(Duration d) {
+    if(d.inSeconds < 60) {
+      return "${d.inSeconds.round().toString()} s";
+    }
+    return "${d.inMinutes.round().toString()} mins ${d.inSeconds.remainder(60).round().toString()} s";
   }
 
   List<Widget> buildWidgets() {

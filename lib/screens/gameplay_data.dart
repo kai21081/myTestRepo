@@ -39,7 +39,6 @@ class _GameplayDataPageState extends State<GameplayDataPage> {
 
   @override
   Widget build(BuildContext context) {
-    dayWidgetListBuilder widgetBuilder = dayWidgetListBuilder([]);
     return Scaffold(
         appBar: AppBar(
           title: Text("User Data"),
@@ -66,7 +65,7 @@ class _GameplayDataPageState extends State<GameplayDataPage> {
                       }
                   }
                   ),
-                    getWidgets(widgetBuilder,gameplayData.data)]
+                    getWidgets(gameplayData.data)]
                   );
                 }
               } else {
@@ -80,7 +79,8 @@ class _GameplayDataPageState extends State<GameplayDataPage> {
         .getUserGameplayData(_getSessionDataModel(context).currentUser);
   }
 
-  Widget getWidgets(dayWidgetListBuilder widgetBuilder, List<GameplayData> gameplayData) {
+  Widget getWidgets(List<GameplayData> gameplayData) {
+    dayWidgetListBuilder widgetBuilder = dayWidgetListBuilder([]);
     for(int i = 0; i < gameplayData.length; i++) {
       widgetBuilder.addGameplayData(gameplayData[i]);
     }
@@ -109,7 +109,6 @@ class _GameplayDataPageState extends State<GameplayDataPage> {
     //String highScoreDate = userData.highScoreDate;
     //int highestLevel = userDate.highestLevel;
     //String highestLevelDate = userData.highestLevelDate
-    int gameStreak = getGameStreak(gameplayDataList);
     return Padding(padding:EdgeInsets.all(20.0),child:Column(children:[
     Row(mainAxisAlignment: MainAxisAlignment.spaceBetween,children:[
       Text("Total Games Played"), Text(totalGamesPlayed.toString())]),
@@ -134,19 +133,26 @@ class _GameplayDataPageState extends State<GameplayDataPage> {
 
   String getAvgDuration(List<GameplayData> gameplayDataList) {
     if(getDateTime(gameplayDataList.first)
-        .difference(getDateTime(gameplayDataList.last))
+       .difference(getDateTime(gameplayDataList.last))
         .compareTo(Duration(days:3)) < 0)
       return "NA";
     int i = 0;
     Duration totalDuration = Duration();
-    while(getDateTime(gameplayDataList.first)
-        .difference(getDateTime(gameplayDataList[i]))
-        .compareTo(Duration(days:3)) >= 0) {
-      totalDuration += getDateTime(gameplayDataList[i])
-          .difference(DateTime.fromMillisecondsSinceEpoch(gameplayDataList[i].endTime));
+    while(i < gameplayDataList.length && Duration(milliseconds:gameplayDataList.first.startTime-gameplayDataList[i].startTime)
+        .compareTo(Duration(days:3)) <= 0) {
+      totalDuration += DateTime.fromMillisecondsSinceEpoch(gameplayDataList[i].endTime)
+          .difference(getDateTime(gameplayDataList[i]));
       i++;
     }
-    return Duration(microseconds:(totalDuration.inMicroseconds/i).round()).toString();
+    int milliseconds = (totalDuration.inMilliseconds/i).floor();
+    return durationToString(Duration(milliseconds:milliseconds));
+  }
+
+  String durationToString(Duration d) {
+    if(d.inSeconds < 60) {
+      return "${d.inSeconds.round().toString()} s";
+    }
+    return "${d.inMinutes.round().toString()} mins ${d.inSeconds.remainder(60).round().toString()} s";
   }
 
   String getTotalScore(List<GameplayData> gameplayDataList) {
@@ -158,7 +164,7 @@ class _GameplayDataPageState extends State<GameplayDataPage> {
     int totalScore = 0;
     while(getDateTime(gameplayDataList.first)
         .difference(getDateTime(gameplayDataList[i]))
-        .compareTo(Duration(days:3)) >= 0) {
+        .compareTo(Duration(days:3)) <= 0) {
       totalScore += gameplayDataList[i].score;
       i++;
     }
@@ -166,12 +172,13 @@ class _GameplayDataPageState extends State<GameplayDataPage> {
   }
 
   int getGameStreak(List<GameplayData> gameplayDataList) {
-    int output = 0;
-    if(DateUtils.isSameDay(getDateTime(gameplayDataList.first),DateTime.now()) ||
-    DateUtils.isSameDay(getDateTime(gameplayDataList.first).add(Duration(days:1)),DateTime.now())){
-      return output;
+    if(gameplayDataList.isEmpty ||
+        !(DateUtils.isSameDay(getDateTime(gameplayDataList.first),DateTime.now()) ||
+        DateUtils.isSameDay(getDateTime(gameplayDataList.first).add(Duration(days:1)),DateTime.now()))){
+      return 0;
     }
-    output = 1;
+
+    int output = 1;
     for(int i = 1; i < gameplayDataList.length; i++) {
       if (DateUtils.isSameDay(getDateTime(gameplayDataList[i-1]),
           getDateTime(gameplayDataList[i]).add(Duration(days:1))))
@@ -223,8 +230,7 @@ class singleDayWidgetBuilder {
   singleDayWidgetBuilder(this.date, this.gameplayDataList);
 
   bool isCorrectDate(GameplayData input) {
-    return DateTime.fromMillisecondsSinceEpoch(input.startTime)
-        .isAtSameMomentAs(date);
+    return DateUtils.isSameDay(DateTime.fromMillisecondsSinceEpoch(input.startTime),date);
   }
 
   void addGameplayData(GameplayData input) {
@@ -242,10 +248,10 @@ class singleDayWidgetBuilder {
         child:Padding(
             padding: const EdgeInsets.all(5.0),
             child: Container(
-                color: Colors.grey,
                 decoration: BoxDecoration(
+                  color:Colors.grey.shade300,
                     border: Border.all(
-                      color: Colors.white,
+                      color: Colors.black,
                     ),
                     borderRadius: BorderRadius.all(Radius.circular(10))),
                 child: Padding(
@@ -254,10 +260,10 @@ class singleDayWidgetBuilder {
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           Row(children: [
-                            Container(
+                            Container(height:50.0,width:50.0,margin:EdgeInsets.fromLTRB(0.0, 0.0, 5.0, 0.0), alignment:Alignment(0.0,0.0),
                                 decoration: BoxDecoration(
                                     color: Colors.white, shape: BoxShape.circle),
-                                child: Text(getCorrectDay())),
+                                child: Text(getCorrectDay(),style: const TextStyle(fontSize:20.0))),
                             Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
@@ -275,21 +281,15 @@ class singleDayWidgetBuilder {
   }
 
   String getCorrectDay() {
-    switch (date.weekday.toString().toLowerCase()) {
-      case "thursday":
-        {
-          return "Th";
-        }
-
-      case "sunday":
-        {
-          return "Su";
-        }
-
-      default:
-        {
-          return date.weekday.toString().characters.first.toUpperCase();
-        }
-    }
+    Map<int,String> weekdayMap = {
+      1:"M",
+      2:"Tu",
+      3:"W",
+      4:"Th",
+      5:"F",
+      6:"S",
+      7:"Su"
+    };
+    return weekdayMap[date.weekday];
   }
 }

@@ -24,6 +24,8 @@ class DebugBluetoothManager implements BluetoothManager {
 
   DebugBluetoothManager() : _isReadyToProvideValues = false;
 
+  String get deviceName => "debugDeviceName";
+
   void connect(ConnectionSpec connectionSpec) {
     Future.delayed(Duration(milliseconds: 200)).then((_) {
       _isReadyToProvideValues = true;

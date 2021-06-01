@@ -103,7 +103,8 @@ class SurfaceEmgGameDatabase extends ChangeNotifier {
         '${_DatabaseColumnNames.gameUserIdColumnName} $_columnTypeText, '
         '${_DatabaseColumnNames.gameScoreColumnName} $_columnTypeInteger, '
         '${_DatabaseColumnNames.numFlapsColumnName} $_columnTypeInteger, '
-        '${_DatabaseColumnNames.savePathColumnName} $_columnTypeText'
+        '${_DatabaseColumnNames.savePathColumnName} $_columnTypeText, '
+        '${_DatabaseColumnNames.bluetoothDeviceName} $_columnTypeText'
         ')');
   }
 
@@ -140,7 +141,7 @@ class SurfaceEmgGameDatabase extends ChangeNotifier {
   // Will fail ungracefully if start timestamp already exists in table.
   // TODO: Do some more robust error handling.
   Future<void> insertDataFromSingleGame(int gameStartTimestamp,
-      int gameEndTimestamp, String userId, int score, int numFlaps, String savePath) async {
+      int gameEndTimestamp, String userId, int score, int numFlaps, String savePath, String bluetoothDeviceName) async {
     await _database.insert(_gameplayDataDatabaseName, <String,dynamic>{
       _DatabaseColumnNames.gameStartTimestampColumnName: gameStartTimestamp,
       _DatabaseColumnNames.gameEndTimestampColumnName: gameEndTimestamp,
@@ -148,6 +149,7 @@ class SurfaceEmgGameDatabase extends ChangeNotifier {
       _DatabaseColumnNames.gameScoreColumnName: score,
       _DatabaseColumnNames.numFlapsColumnName: numFlaps,
       _DatabaseColumnNames.savePathColumnName: savePath,
+      _DatabaseColumnNames.bluetoothDeviceName: bluetoothDeviceName
     });
 
     updateHighScoreIfBetter(userId, score);
@@ -189,7 +191,8 @@ class SurfaceEmgGameDatabase extends ChangeNotifier {
             row[_DatabaseColumnNames.gameEndTimestampColumnName],
             row[_DatabaseColumnNames.gameScoreColumnName],
             row[_DatabaseColumnNames.numFlapsColumnName],
-            row[_DatabaseColumnNames.savePathColumnName]);
+            row[_DatabaseColumnNames.savePathColumnName],
+            row[_DatabaseColumnNames.bluetoothDeviceName]);
       }));
     });
   }
@@ -354,6 +357,7 @@ class _DatabaseColumnNames {
   static const String gameScoreColumnName = 'score';
   static const String numFlapsColumnName = 'numFlaps';
   static const String savePathColumnName = 'savePath';
+  static const String bluetoothDeviceName = 'bluetoothDevice';
 
   static const String flapVelocityInScreenHeightFractionPerSecondColumnName =
       'flapVelocityInScreenHeightFractionPerSecond';

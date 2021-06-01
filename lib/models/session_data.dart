@@ -118,11 +118,11 @@ class SessionDataModel extends ChangeNotifier {
               _jsonExtension);
 
     gameplayData = new GameplayData(gameplayData.startTime, gameplayData.endTime,
-        gameplayData.score, gameplayData.numFlaps,savePath);
+        gameplayData.score, gameplayData.numFlaps,savePath,gameplayData.deviceName);
 
     Future<void> databaseWriteAndUserUpdateFuture = _database
         .insertDataFromSingleGame(gameplayData.startTime, gameplayData.endTime,
-        _currentUser.id, gameplayData.score, gameplayData.numFlaps,gameplayData.emgRecordingPath).then((_) async {
+        _currentUser.id, gameplayData.score, gameplayData.numFlaps,gameplayData.emgRecordingPath,gameplayData.deviceName).then((_) async {
       _currentUser = await _database.getUserWithId(_currentUser.id);
     });
 
