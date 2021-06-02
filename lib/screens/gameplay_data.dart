@@ -28,9 +28,26 @@ class GameplayDataPage extends StatefulWidget {
 }
 
 class _GameplayDataPageState extends State<GameplayDataPage> {
+
+  List<GameplayData> _gameplayData;
+  SessionDataModel _databaseService;
+  bool fetchingData = true;
   @override
   void initState() {
     super.initState();
+
+    //JK: I put a print statement for you to see the order of operation. you can delete them before checking back in
+    // InitState -> didChangeDependencies -> build
+    print('init State');
+  }
+
+  @override
+  void didChangeDependencies() {
+    // TODO: implement didChangeDependencies
+    super.didChangeDependencies();
+    print('did Change Dependencies');
+    _databaseService = Provider.of<SessionDataModel>(context, listen: false);
+    _getGameplayData();
   }
 
   @override
@@ -38,41 +55,52 @@ class _GameplayDataPageState extends State<GameplayDataPage> {
     super.deactivate();
   }
 
+  void _getGameplayData() async {
+      User currentUser = _databaseService.currentUser;
+      _gameplayData = await _databaseService.getUserGameplayData(currentUser);
+      setState(() {
+        fetchingData = false;
+      });
+  }
+
   @override
   Widget build(BuildContext context) {
+    print('build');
     return Scaffold(
         appBar: AppBar(
           title: Text("User Data"),
         ),
         body:
-        FutureBuilder<UnmodifiableListView<GameplayData>>(
-            future: _getUserData(context),
-            builder: (context,
-                AsyncSnapshot<UnmodifiableListView<GameplayData>>
-                    gameplayData) {
-              if (gameplayData.hasData) {
-                if (gameplayData.data.length == 0) {
-                  return Text('No Gameplay Data is available.');
-                } else {
-
-                  //Show list of gameplay data
-                  return Column(children:[FutureBuilder<Widget>(
-                    future: summaryWidgetList(gameplayData.data, context),
-                        builder: (context, AsyncSnapshot<Widget> summaryList) {
-                      if(summaryList.hasData) {
-                        return summaryList.data;
-                      } else {
-                        return CircularProgressIndicator();
-                      }
-                  }
-                  ),
-                    getWidgets(gameplayData.data)]
-                  );
-                }
-              } else {
-                return CircularProgressIndicator();
-              }
-            }));
+            fetchingData ? CircularProgressIndicator() : Text('Total number of gameplay data: ${_gameplayData.length}')
+        // FutureBuilder<UnmodifiableListView<GameplayData>>(
+        //     future: _getUserData(context),
+        //     builder: (context,
+        //         AsyncSnapshot<UnmodifiableListView<GameplayData>>
+        //             gameplayData) {
+        //       if (gameplayData.hasData) {
+        //         if (gameplayData.data.length == 0) {
+        //           return Text('No Gameplay Data is available.');
+        //         } else {
+        //
+        //           //Show list of gameplay data
+        //           return Column(children:[FutureBuilder<Widget>(
+        //             future: summaryWidgetList(gameplayData.data, context),
+        //                 builder: (context, AsyncSnapshot<Widget> summaryList) {
+        //               if(summaryList.hasData) {
+        //                 return summaryList.data;
+        //               } else {
+        //                 return CircularProgressIndicator();
+        //               }
+        //           }
+        //           ),
+        //             getWidgets(gameplayData.data)]
+        //           );
+        //         }
+        //       } else {
+        //         return CircularProgressIndicator();
+        //       }
+        //     })
+    );
   }
 
   Future<UnmodifiableListView<GameplayData>> _getUserData(context) {
