@@ -1,4 +1,5 @@
 import 'dart:collection';
+import 'dart:core';
 import 'dart:math';
 import 'dart:ui';
 import 'dart:io';
@@ -43,7 +44,9 @@ class FlappyGame extends Game with HasWidgetsOverlay {
   bool _isLevelCompleted = false;
   bool _practiceMode;
   String _levelPath;
-  List highScored;
+  int _level;
+  List _highScored;
+  List _scoreReqs;
   ThresholdedTriggerDataProcessor _dataProcessor;
 
   final String _gameOverMenuOverlayName = 'game_over_menu';
@@ -63,6 +66,7 @@ class FlappyGame extends Game with HasWidgetsOverlay {
     _practiceMode = practiceMode;
     _levelPath = levelPath;
     _screenSize = MediaQuery.of(_context).size;
+    _parseScoreReqsFromFile("assets/levels/scorereqs.txt");
     _initialize();
   }
 
@@ -224,7 +228,9 @@ class FlappyGame extends Game with HasWidgetsOverlay {
     if ((!_practiceMode &&
         (gameEndingGroundCollisionDetected || columnCollisionDetected)) ||
         _targetController.isGameOver()) {
-      if (_targetController.isCompleted()) {
+      print(_currentScore);
+      print(_scoreReqs[_targetController.getLevel() - 1]);
+      if (_currentScore >= _scoreReqs[_targetController.getLevel() - 1]) {
         _isLevelCompleted = true;
       }
       _endGame();
@@ -236,10 +242,10 @@ class FlappyGame extends Game with HasWidgetsOverlay {
     int gameEndMillisecondsSinceEpoch = DateTime.now().millisecondsSinceEpoch;
     _isGameOver = true;
     SessionDataModel session = _getSessionDataModel();
-    if (_targetController.isCompleted()) {
+    if (_isLevelCompleted) {
       session.handleLevelProg(session.getCurrentUser().id, _targetController.getLevel());
     }
-    highScored = _currentUser.updateScores(_currentScore);
+    _highScored = _currentUser.updateScores(_currentScore);
     EmgRecording emgRecording = _dataProcessor.dataLog;
     GameplayData gameplayData = GameplayData(_gameStartMillisecondsSinceEpoch,
         gameEndMillisecondsSinceEpoch, _currentScore, _birdController.numFlaps);
@@ -257,10 +263,10 @@ class FlappyGame extends Game with HasWidgetsOverlay {
   void _showGameOverMenu(Future<void> canDisplayMenuFuture) {
     var highScoreSize = 0.0;
     var dailyHighScoreSize = 0.0;
-    if (highScored[0]) {
+    if (_highScored[0]) {
       highScoreSize = 30;
     }
-    if (highScored[1]) {
+    if (_highScored[1]) {
       dailyHighScoreSize = 30;
     }
     addWidgetOverlay(
@@ -399,6 +405,22 @@ class FlappyGame extends Game with HasWidgetsOverlay {
 
   SessionDataModel _getSessionDataModel() {
     return Provider.of<SessionDataModel>(_context, listen: false);
+  }
+
+  void _parseScoreReqsFromFile(String path) {
+    Future<String> level = rootBundle.loadString(path);
+    Future.delayed(Duration(milliseconds: 10),() => level.then((text) {
+      _scoreReqs = _getReqs(text);
+    }));
+  }
+
+  List _getReqs(String text) {
+    List<String> wordList = text.split('\n');
+    List scoreList = new List(wordList.length);
+    for (int i = 0; i < wordList.length; i++) {
+      scoreList[i] = int.parse(wordList[i]);
+    }
+    return scoreList;
   }
 
   void onTapDown(TapDownDetails details) {

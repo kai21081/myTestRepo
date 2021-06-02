@@ -49,7 +49,7 @@ class Bird {
 
   void render(Canvas canvas) {
     if (_isDead) {
-      _deadSprite.renderRect(canvas, _position);
+      //_deadSprite.renderRect(canvas, _position); bird looks dead
       return;
     }
 
