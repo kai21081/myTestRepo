@@ -43,6 +43,7 @@ class FlappyGame extends Game with HasWidgetsOverlay {
   bool _isLevelCompleted = false;
   bool _practiceMode;
   String _levelPath;
+  List highScored;
   ThresholdedTriggerDataProcessor _dataProcessor;
 
   final String _gameOverMenuOverlayName = 'game_over_menu';
@@ -238,7 +239,7 @@ class FlappyGame extends Game with HasWidgetsOverlay {
     if (_targetController.isCompleted()) {
       session.handleLevelProg(session.getCurrentUser().id, _targetController.getLevel());
     }
-    _currentUser.updateScores(_currentScore);
+    highScored = _currentUser.updateScores(_currentScore);
     EmgRecording emgRecording = _dataProcessor.dataLog;
     GameplayData gameplayData = GameplayData(_gameStartMillisecondsSinceEpoch,
         gameEndMillisecondsSinceEpoch, _currentScore, _birdController.numFlaps);
@@ -254,6 +255,14 @@ class FlappyGame extends Game with HasWidgetsOverlay {
   }
 
   void _showGameOverMenu(Future<void> canDisplayMenuFuture) {
+    var highScoreSize = 0.0;
+    var dailyHighScoreSize = 0.0;
+    if (highScored[0]) {
+      highScoreSize = 30;
+    }
+    if (highScored[1]) {
+      dailyHighScoreSize = 30;
+    }
     addWidgetOverlay(
         _gameOverMenuOverlayName,
         Center(
@@ -265,6 +274,18 @@ class FlappyGame extends Game with HasWidgetsOverlay {
                     mainAxisAlignment: MainAxisAlignment.center,
                     mainAxisSize: MainAxisSize.min,
                     children: <Widget>[
+                      Text('New High Score!',
+                          style: TextStyle(
+                              color: Colors.black,
+                              fontWeight: FontWeight.bold,
+                              fontSize: highScoreSize,
+                              decoration: TextDecoration.none)),
+                      Text('New Daily High Score!',
+                          style: TextStyle(
+                              color: Colors.black,
+                              fontWeight: FontWeight.bold,
+                              fontSize: dailyHighScoreSize,
+                              decoration: TextDecoration.none)),
                       Text('Number of Flaps:' + _birdController.numFlaps.toString(),
                           style: TextStyle(
                               color: Colors.black,

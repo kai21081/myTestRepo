@@ -25,13 +25,17 @@ class User {
 
   String get deviceName => _deviceName;
 
-  void updateScores(int score) {
+  List updateScores(int score) {
+    var scoreList = [false, false];
     if (score > highScore) {
       highScore = score;
+      scoreList[0] = true;
     }
     if (score > dailyHighScore) {
       dailyHighScore = score;
+      scoreList[1] = true;
     }
+    return scoreList;
   }
   String toString() {
     StringBuffer buffer = StringBuffer();
