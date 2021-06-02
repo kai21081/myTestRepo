@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:collection';
+import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:gameplayground/models/gameplay_data.dart';
@@ -198,15 +199,15 @@ class _GameplayDataPageState extends State<GameplayDataPage> {
       return 0;
     }
 
-    int output = 1;
+    int output = 0;
     Duration dayDuration = Duration();
-    for(int i = 1; i < gameplayDataList.length; i++) {
-      if (DateUtils.isSameDay(getDateTime(gameplayDataList[i-1]),
+    for(int i = 0; i < gameplayDataList.length; i++) {
+      if (DateUtils.isSameDay(getDateTime(gameplayDataList[max(i-1,0)]),
           getDateTime(gameplayDataList[i]).add(Duration(days:1))) && dayDuration.inMinutes >= 30) {
         output++;
         dayDuration = getDateTime(gameplayDataList[i]).difference(DateTime.fromMillisecondsSinceEpoch(gameplayDataList[i].endTime));
       }
-      else if(!DateUtils.isSameDay(getDateTime(gameplayDataList[i-1]),
+      else if(!DateUtils.isSameDay(getDateTime(gameplayDataList[max(i-1,0)]),
           getDateTime(gameplayDataList[i])))
         return output;
       else

@@ -87,7 +87,7 @@ class _GameplayDataDayPageState extends State<GameplayDataDayPage> {
                     builder: (context) => GameplayDataDetailPage(
                         gameplayData: gameplayDataList.elementAt(index))));
           },
-          child: Card(
+          child: Card(color:Colors.grey.shade300,
               child: Padding(
                 padding: const EdgeInsets.all(20.0),
                 child: Row(
